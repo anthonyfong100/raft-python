@@ -15,14 +15,14 @@ class NodeRole(Enum):
 class RaftNode:
     def __init__(self, socket_wrapper: SocketWrapper, kv_cache: KVCache, id: str, others: List[str]):
         self.socket: SocketWrapper = socket_wrapper
-        self.id: str = id
-        self.others: List[str] = others
         # TODO: refactor this to interact with state machine interface
         self.state_machine: KVCache = kv_cache
+        self.id: str = id
+        self.others: List[str] = others
 
-        # send hello message
+        # election node variables
         self.role: NodeRole = NodeRole.FOLLOWER
-        self.send_hello()
+        self.num_votes_received: int = 0
 
     def send_hello(self):
         print("Replica %s starting up" % self.id, flush=True)

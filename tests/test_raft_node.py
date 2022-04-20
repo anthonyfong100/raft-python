@@ -10,11 +10,12 @@ class TestRaftNode(unittest.TestCase):
     def setUp(self):
         self.socket_mock = Mock(SocketWrapper)
         self.state_machine_mock = Mock(KVCache)
-        self.kv_store = RaftNode(
+        self.raft_node = RaftNode(
             self.socket_mock, self.state_machine_mock, 0, 0)
 
-    def test_intiialization(self):
-        self.socket_mock.send.return_value = {"src": self.kv_store.id, "dst": BROADCAST_ADDR,
+    def test_send_hello(self):
+        self.raft_node.send_hello()
+        self.socket_mock.send.return_value = {"src": self.raft_node.id, "dst": BROADCAST_ADDR,
                                               "leader": BROADCAST_ADDR, "type": "hello"}
         self.socket_mock.send.assert_called()
 

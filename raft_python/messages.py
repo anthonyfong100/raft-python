@@ -9,6 +9,7 @@ class MessageTypes(Enum):
     OK = "ok"
     FAIL = "fail"
     REDIRECT = "redirect"
+    HELLO = "hello"
 
 
 class BaseMessage:
@@ -16,13 +17,11 @@ class BaseMessage:
                  src: str,
                  dst: str,
                  type: MessageTypes,
-                 MID: str,
                  leader: str = BROADCAST_ADDR):
         self.src: str = src
         self.dst: str = dst
         self.leader: str = leader
         self.type: MessageTypes = type
-        self.MID: str = MID
 
     def serialize(self):
         # need to make a copy as it returns the reference
@@ -33,6 +32,14 @@ class BaseMessage:
 # Request message wrappers
 
 
+class HelloMessage(BaseMessage):
+    def __init__(self,
+                 src: str,
+                 dst: str,
+                 leader: str = BROADCAST_ADDR):
+        super().__init__(src, dst, MessageTypes.HELLO, leader)
+
+
 class GetMessageRequest(BaseMessage):
     def __init__(self,
                  src: str,
@@ -40,8 +47,9 @@ class GetMessageRequest(BaseMessage):
                  MID: str,
                  key: str,
                  leader: str = BROADCAST_ADDR):
-        super().__init__(src, dst, MessageTypes.GET, MID, leader)
+        super().__init__(src, dst, MessageTypes.GET, leader)
         self.key = key
+        self.MID = MID
 
 
 class PutMessageRequest(BaseMessage):
@@ -52,9 +60,10 @@ class PutMessageRequest(BaseMessage):
                  key: str,
                  val: str,
                  leader: str = BROADCAST_ADDR):
-        super().__init__(src, dst, MessageTypes.PUT, MID, leader)
+        super().__init__(src, dst, MessageTypes.PUT, leader)
         self.key = key
         self.val = val
+        self.MID = MID
 
 
 # Reponse message wrappers
@@ -66,8 +75,9 @@ class GetMessageResponseOk(BaseMessage):
                  val: str,
                  leader: str = BROADCAST_ADDR):
         super().__init__(
-            src, dst, MessageTypes.OK, MID, leader)
+            src, dst, MessageTypes.OK, leader)
         self.val = val
+        self.MID = MID
 
 
 class PutMessageResponseOk(BaseMessage):
@@ -77,7 +87,8 @@ class PutMessageResponseOk(BaseMessage):
                  MID: str,
                  leader: str = BROADCAST_ADDR):
         super().__init__(
-            src, dst, MessageTypes.OK, MID, leader)
+            src, dst, MessageTypes.OK, leader)
+        self.MID = MID
 
 
 class MessageFail(BaseMessage):
@@ -86,7 +97,8 @@ class MessageFail(BaseMessage):
                  dst: str,
                  MID: str,
                  leader: str = BROADCAST_ADDR):
-        super().__init__(src, dst, MessageTypes.FAIL, MID, leader)
+        super().__init__(src, dst, MessageTypes.FAIL, leader)
+        self.MID = MID
 
 
 class MessageRedirect(BaseMessage):
@@ -95,7 +107,8 @@ class MessageRedirect(BaseMessage):
                  dst: str,
                  MID: str,
                  leader: str = BROADCAST_ADDR):
-        super().__init__(src, dst, MessageTypes.REDIRECT, MID, leader)
+        super().__init__(src, dst, MessageTypes.REDIRECT, leader)
+        self.MID = MID
 
 
 def get_message_from_payload(payload: dict) -> Union[GetMessageRequest, PutMessageRequest]:

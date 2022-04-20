@@ -14,5 +14,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     socket: SocketWrapper = SocketWrapper(args.port)
     kv_cache: KVCache = KVCache()
-    kv_store = RaftNode(socket, kv_cache, args.id, args.others)
-    kv_store.run()
+    raft_node = RaftNode(socket, kv_cache, args.id, args.others)
+    raft_node.send_hello()
+    raft_node.run()
