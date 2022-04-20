@@ -16,3 +16,6 @@ unit-test:
 
 clean:
 	rm ./raft_python_debug.log
+
+view-logs:
+	tail -f raft_python_debug.log
