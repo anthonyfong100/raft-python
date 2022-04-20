@@ -133,8 +133,14 @@ class RequestVote(BaseMessage):
         self.last_log_term_number = last_log_term_number
 
 
-class RequestVoteResponse:
-    def __init__(self, term_number: int, vote_granted: bool) -> None:
+class RequestVoteResponse(BaseMessage):
+    def __init__(self,
+                 src: str,
+                 dst: str,
+                 term_number: int,
+                 vote_granted: bool,
+                 leader: str = BROADCAST_ALL_ADDR) -> None:
+        super().__init__(src, dst, MessageTypes.REQUEST_VOTE_RESPONSE, leader)
         self.term_number = term_number
         self.vote_granted = vote_granted
 
