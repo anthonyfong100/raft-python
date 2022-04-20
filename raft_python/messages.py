@@ -1,3 +1,4 @@
+from typing import Union
 from raft_python.configs import BROADCAST_ADDR
 from enum import Enum
 
@@ -95,3 +96,24 @@ class MessageRedirect(BaseMessage):
                  MID: str,
                  leader: str = BROADCAST_ADDR):
         super().__init__(src, dst, MessageTypes.REDIRECT, MID, leader)
+
+
+def get_message_from_payload(payload: dict) -> Union[GetMessageRequest, PutMessageRequest]:
+    if payload.get("type", None) == MessageTypes.GET.value:
+        return GetMessageRequest(
+            payload["src"],
+            payload["dst"],
+            payload["MID"],
+            payload["key"],
+            payload["leader"])
+    elif payload.get("type", None) == MessageTypes.PUT.value:
+        return PutMessageRequest(
+            payload["src"],
+            payload["dst"],
+            payload["MID"],
+            payload["key"],
+            payload["val"],
+            payload["leader"])
+
+
+ReqMessageType = Union[GetMessageRequest, PutMessageRequest]

@@ -1,6 +1,8 @@
 from typing import Any
 from raft_python.commands import ALL_COMMANDS, CommandType
 
+# TODO: Hide KV Cache behind state machine interface for future extensibility
+
 
 class KVCache:
     def __init__(self):

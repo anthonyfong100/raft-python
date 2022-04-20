@@ -1,14 +1,27 @@
+from enum import Enum
 from typing import List
 from raft_python.socket_wrapper import SocketWrapper
 from raft_python.configs import BROADCAST_ADDR
+from raft_python.messages import get_message_from_payload, ReqMessageType
+from raft_python.kv_cache import KVCache
+
+
+class NodeRole(Enum):
+    FOLLOWER = "follower"
+    CANDIDATE = "candidate"
+    LEADER = "leader"
 
 
 class RaftNode:
-    def __init__(self, socket_wrapper: SocketWrapper, id: str, others: List[str]):
+    def __init__(self, socket_wrapper: SocketWrapper, kv_cache: KVCache, id: str, others: List[str]):
         self.socket: SocketWrapper = socket_wrapper
         self.id: str = id
         self.others: List[str] = others
+        # TODO: refactor this to interact with state machine interface
+        self.state_machine: KVCache = kv_cache
 
+        # send hello message
+        self.role: NodeRole = NodeRole.FOLLOWER
         self.send_hello()
 
     def send_hello(self):
@@ -22,3 +35,4 @@ class RaftNode:
         while True:
             msg = self.socket.receive()
             print("Received message '%s'" % (msg,), flush=True)
+            req: ReqMessageType = get_message_from_payload(msg)

@@ -2,6 +2,7 @@
 
 import argparse
 import socket
+from raft_python.kv_cache import KVCache
 from raft_python.raft_node import RaftNode
 from raft_python.socket_wrapper import SocketWrapper
 if __name__ == "__main__":
@@ -12,5 +13,6 @@ if __name__ == "__main__":
                         nargs='+', help="IDs of other replicas")
     args = parser.parse_args()
     socket: SocketWrapper = SocketWrapper(args.port)
-    kv_store = RaftNode(socket, args.id, args.others)
+    kv_cache: KVCache = KVCache()
+    kv_store = RaftNode(socket, kv_cache, args.id, args.others)
     kv_store.run()
