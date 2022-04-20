@@ -5,7 +5,9 @@ from enum import Enum
 from typing import List
 from raft_python.socket_wrapper import SocketWrapper
 from raft_python.configs import BROADCAST_ALL_ADDR, MAX_DURATION_NO_HEARTBEAT, LOGGER_NAME
-from raft_python.messages import GetMessageRequest, HelloMessage, MessageFail, PutMessageRequest, RequestVoteResponse, get_message_from_payload, ReqMessageType, RequestVote
+from raft_python.messages import GetMessageRequest,\
+    HelloMessage, MessageFail, PutMessageRequest, RequestVoteResponse,\
+    get_message_from_payload, ReqMessageType, RequestVote
 from raft_python.kv_cache import KVCache
 from raft_python.commands import ALL_COMMANDS
 
@@ -21,8 +23,8 @@ class NodeRole(Enum):
 class RaftNode:
     def __init__(self, socket_wrapper: SocketWrapper, kv_cache: KVCache, id: str, others: List[str]):
         self.socket: SocketWrapper = socket_wrapper
-        # TODO: refactor this to interact with state machine interface
-        self.state_machine: KVCache = kv_cache
+        # TODO: refactor this to interact with executor interface
+        self.executor: KVCache = kv_cache
         self.id: str = id
         self.others: List[str] = others
 
@@ -72,7 +74,7 @@ class RaftNode:
         self.socket.send(failed_resp)
 
     def process_request_vote_req(self, req: RequestVote) -> None:
-        logger.debug("Received Election Req message '%s'" % (req,))
+        logger.info("Received Election Req message '%s'" % (req,))
 
     def process_request_vote_response(self, req: RequestVoteResponse) -> None:
         logger.debug("Received Election Response message '%s'" %

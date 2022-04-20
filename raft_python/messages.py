@@ -174,5 +174,7 @@ def get_message_from_payload(payload: dict) -> Union[GetMessageRequest, PutMessa
         f"Received payload is of unknown type\n Payload:{payload}")
 
 
+InternalMessageType = Union[RequestVote, RequestVoteResponse]
+ClientMessageType = Union[GetMessageRequest, PutMessageRequest]
 ReqMessageType = Union[HelloMessage, GetMessageRequest,
                        PutMessageRequest, RequestVote, RequestVoteResponse]
