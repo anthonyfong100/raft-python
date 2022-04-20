@@ -23,7 +23,7 @@ class State(ABC):
             self.term_number: int = old_state.term_number
             self.leader_id: str = old_state.leader_id
             self.log: List[ALL_COMMANDS] = old_state.log.copy()
-            self.cluster_nodes: List[str] = self.old_state
+            self.cluster_nodes: List[str] = old_state.cluster_nodes
         else:
             self.raft_node: "RaftNode" = raft_node
             self.voted_for = None

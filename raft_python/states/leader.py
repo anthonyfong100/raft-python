@@ -1,13 +1,13 @@
+import time
 import logging
 import raft_python.messages as Messages
 from raft_python.configs import LOGGER_NAME
-from raft_python.states.candidate import Candidate
 from raft_python.states.state import State
 logger = logging.getLogger(LOGGER_NAME)
 
 
 class Leader(State):
-    def __init__(self, old_state: Candidate = None, raft_node: "RaftNode" = None):
+    def __init__(self, old_state: "Candidate" = None, raft_node: "RaftNode" = None):
         super().__init__(old_state, raft_node)
         logging.info(f"Became the leader with Term:{self.term_number}")
         self.leader_id = self.id

@@ -18,15 +18,15 @@ class Candidate(Follower):
         logger.info("Running for elections")
         self.term_number += 1
         self.vote_count = 1
-        self.voted_for = self.id
+        self.voted_for = self.raft_node.id
         last_log_index: int = len(self.log)
         last_log_term_number: int = self.log[-1].term_number if self.log else 0
         for other_node_id in self.raft_node.others:
             request_vote: RequestVote = RequestVote(
-                self.id,
+                self.raft_node.id,
                 other_node_id,
-                self.term,
-                self.id,
+                self.term_number,
+                self.raft_node.id,
                 last_log_index,
                 last_log_term_number,
                 BROADCAST_ALL_ADDR)  # TODO: Check if should broadcast leader as unknown
