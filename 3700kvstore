@@ -2,8 +2,7 @@
 
 import argparse
 import socket
-import json
-from raft_python.kv_store import KVStore
+from raft_python.raft_node import RaftNode
 from raft_python.socket_wrapper import SocketWrapper
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='run a key-value store')
@@ -13,5 +12,5 @@ if __name__ == "__main__":
                         nargs='+', help="IDs of other replicas")
     args = parser.parse_args()
     socket: SocketWrapper = SocketWrapper(args.port)
-    kv_store = KVStore(socket, args.id, args.others)
+    kv_store = RaftNode(socket, args.id, args.others)
     kv_store.run()

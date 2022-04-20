@@ -1,12 +1,13 @@
+from typing import List
 from raft_python.socket_wrapper import SocketWrapper
 from raft_python.configs import BROADCAST_ADDR
 
 
-class KVStore:
-    def __init__(self, socket_wrapper: SocketWrapper, id, others):
+class RaftNode:
+    def __init__(self, socket_wrapper: SocketWrapper, id: str, others: List[str]):
         self.socket: SocketWrapper = socket_wrapper
-        self.id = id
-        self.others = others
+        self.id: str = id
+        self.others: List[str] = others
 
         self.send_hello()
 

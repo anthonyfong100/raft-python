@@ -1,14 +1,14 @@
 import unittest
-from raft_python.kv_store import KVStore
+from raft_python.raft_node import RaftNode
 from raft_python.socket_wrapper import SocketWrapper
 from raft_python.configs import BROADCAST_ADDR
 from unittest.mock import Mock
 
 
-class TestKVStore(unittest.TestCase):
+class TestRaftNode(unittest.TestCase):
     def setUp(self):
         self.socket_mock = Mock(SocketWrapper)
-        self.kv_store = KVStore(self.socket_mock, 0, 0)
+        self.kv_store = RaftNode(self.socket_mock, 0, 0)
 
     def test_intiialization(self):
         self.socket_mock.send.return_value = {"src": self.kv_store.id, "dst": BROADCAST_ADDR,
