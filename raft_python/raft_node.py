@@ -1,7 +1,8 @@
+import time
 from enum import Enum
 from typing import List
 from raft_python.socket_wrapper import SocketWrapper
-from raft_python.configs import BROADCAST_ALL_ADDR
+from raft_python.configs import BROADCAST_ALL_ADDR, MAX_DURATION_NO_HEARTBEAT
 from raft_python.messages import GetMessageRequest, HelloMessage, MessageFail, PutMessageRequest, RequestVoteResponse, get_message_from_payload, ReqMessageType, RequestVote
 from raft_python.kv_cache import KVCache
 from raft_python.commands import ALL_COMMANDS
@@ -29,6 +30,7 @@ class RaftNode:
         self.role: NodeRole = NodeRole.FOLLOWER
         self.num_votes_received: int = 0
         self.leader = BROADCAST_ALL_ADDR
+        self.last_heartbeat = time.time()
 
     def send_hello(self):
         hello_msg: HelloMessage = HelloMessage(
@@ -37,8 +39,10 @@ class RaftNode:
         self.socket.send(hello_msg)
 
     def run_election(self) -> None:
-        if self.role != NodeRole.CANDIDATE:
+        if self.role != NodeRole.FOLLOWER:
             return
+        print("Running elections", flush=True)
+        self.role = NodeRole.CANDIDATE
         self.term += 1
         self.num_votes_received = 1
         for other_node_id in self.others:
@@ -51,7 +55,6 @@ class RaftNode:
                 self.id,
                 last_log_index,
                 last_log_term_number,
-                self.id,
                 BROADCAST_ALL_ADDR)  # not sure who is the leader so broadcast to all
             self.socket.send(request_vote)
 
@@ -79,8 +82,13 @@ class RaftNode:
         raise ValueError(
             f"received unknown message type:{type(req)} message:{req.serialize()}")
 
+    def should_run_election(self):
+        return time.time() > self.last_heartbeat + MAX_DURATION_NO_HEARTBEAT and self.role == NodeRole.FOLLOWER
+
     def run(self):
         while True:
+            if self.should_run_election():
+                self.run_election()
             msg = self.socket.receive()
             req: ReqMessageType = get_message_from_payload(msg)
             self.process_response(req)
