@@ -29,6 +29,9 @@ class BaseMessage:
         serialize_dict["type"] = self.type.value
         return serialize_dict
 
+    def __eq__(self, __o: object) -> bool:
+        return vars(self) == vars(__o)
+
 # Request message wrappers
 
 
@@ -129,4 +132,4 @@ def get_message_from_payload(payload: dict) -> Union[GetMessageRequest, PutMessa
             payload["leader"])
 
 
-ReqMessageType = Union[GetMessageRequest, PutMessageRequest]
+ReqMessageType = Union[HelloMessage, GetMessageRequest, PutMessageRequest]

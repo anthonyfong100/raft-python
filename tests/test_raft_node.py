@@ -1,4 +1,5 @@
 import unittest
+from raft_python.messages import HelloMessage
 from raft_python.raft_node import RaftNode
 from raft_python.socket_wrapper import SocketWrapper
 from raft_python.kv_cache import KVCache
@@ -15,9 +16,9 @@ class TestRaftNode(unittest.TestCase):
 
     def test_send_hello(self):
         self.raft_node.send_hello()
-        self.socket_mock.send.return_value = {"src": self.raft_node.id, "dst": BROADCAST_ADDR,
-                                              "leader": BROADCAST_ADDR, "type": "hello"}
-        self.socket_mock.send.assert_called()
+        socket_send_args = HelloMessage(
+            self.raft_node.id, BROADCAST_ADDR, BROADCAST_ADDR)
+        self.socket_mock.send.assert_called_with(socket_send_args)
 
 
 if __name__ == '__main__':

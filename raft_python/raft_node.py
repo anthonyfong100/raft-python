@@ -2,7 +2,7 @@ from enum import Enum
 from typing import List
 from raft_python.socket_wrapper import SocketWrapper
 from raft_python.configs import BROADCAST_ADDR
-from raft_python.messages import get_message_from_payload, ReqMessageType
+from raft_python.messages import HelloMessage, get_message_from_payload, ReqMessageType
 from raft_python.kv_cache import KVCache
 
 
@@ -25,11 +25,11 @@ class RaftNode:
         self.num_votes_received: int = 0
 
     def send_hello(self):
+        hello_msg: HelloMessage = HelloMessage(
+            self.id, BROADCAST_ADDR, BROADCAST_ADDR)
         print("Replica %s starting up" % self.id, flush=True)
-        hello = {"src": self.id, "dst": BROADCAST_ADDR,
-                 "leader": BROADCAST_ADDR, "type": "hello"}
-        self.socket.send(hello)
-        print("Sent hello message: %s" % hello, flush=True)
+        self.socket.send(hello_msg)
+        print("Sent hello message: %s" % hello_msg.serialize(), flush=True)
 
     def run(self):
         while True:

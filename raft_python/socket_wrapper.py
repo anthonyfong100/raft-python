@@ -1,6 +1,7 @@
 import socket
 import json
 from raft_python.configs import BUFFER_SIZE
+from raft_python.messages import ReqMessageType
 
 
 class SocketWrapper:
@@ -13,8 +14,9 @@ class SocketWrapper:
         _socket.bind(('localhost', 0))
         return _socket
 
-    def send(self, message: dict):
-        self.socket.sendto(json.dumps(message).encode(
+    def send(self, message: ReqMessageType):
+        message_serialized = message.serialize()
+        self.socket.sendto(json.dumps(message_serialized).encode(
             'utf-8'), ('localhost', self.port))
 
     def receive(self, buff_size=BUFFER_SIZE) -> dict:
