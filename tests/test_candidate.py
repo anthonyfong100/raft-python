@@ -7,6 +7,7 @@ from raft_python.raft_node import RaftNode
 from raft_python.states.follower import Follower
 from raft_python.states.candidate import Candidate
 from raft_python.commands import SetCommand
+from raft_python.states.leader import Leader
 
 
 class TestFollower(unittest.TestCase):
@@ -16,6 +17,7 @@ class TestFollower(unittest.TestCase):
         self.raft_node_mock.others = ["0", "2", "3"]
         self.follower_state = Follower(raft_node=self.raft_node_mock)
         self.candidate_state = Candidate(self.follower_state)
+        self.raft_node_mock.state = self.candidate_state
 
     def test_run_elections(self):
         prev_term_number: int = self.follower_state.term_number
@@ -39,120 +41,33 @@ class TestFollower(unittest.TestCase):
         self.assertEqual(self.raft_node_mock.send.call_count,
                          len(self.candidate_state.cluster_nodes))
 
-    # def test_randomly_generate_election_timer(self):
-    #     self.assertTrue(MAX_DURATION_NO_HEARTBEAT <= self.follower_state.randomly_generate_election_timer(
-    #     ) <= 2 * MAX_DURATION_NO_HEARTBEAT)
+    def test_on_interal_recv_request_vote_response_success(self):
+        """
+         On receiving a vote need to increment count and call change state if got majority
+        """
+        self.candidate_state.term_number = 10
+        incoming_vote_resp: Messages.RequestVoteResponse = Messages.RequestVoteResponse(
+            "raft_node1", self.raft_node_mock.id, 9, True, self.candidate_state.leader_id
+        )
 
-    # # TODO: add in leader field test
-    # def test_on_client_put(self):
-    #     """ Should return redirect and specify leader field if present"""
-    #     incoming_put_req: Messages.PutMessageRequest = Messages.PutMessageRequest(
-    #         "src", self.raft_node_mock.id, "MID", "key", "val", BROADCAST_ALL_ADDR
-    #     )
-    #     redirect_message: Messages.MessageRedirect = Messages.MessageRedirect(
-    #         self.raft_node_mock.id, "src", "MID", BROADCAST_ALL_ADDR)
-    #     self.follower_state.on_client_put(incoming_put_req)
-    #     self.raft_node_mock.send.assert_called_once_with(redirect_message)
+        self.candidate_state.receive_internal_message(incoming_vote_resp)
+        self.assertEqual(self.candidate_state.vote_count, 2)
+        self.raft_node_mock.change_state.assert_not_called()
+        self.candidate_state.receive_internal_message(incoming_vote_resp)
+        self.assertEqual(self.candidate_state.vote_count, 3)
+        self.raft_node_mock.change_state.assert_called_once_with(Leader)
 
-    # def test_on_client_get(self):
-    #     """ Should return redirect and specify leader field if present"""
-    #     incoming_put_req: Messages.PutMessageRequest = Messages.PutMessageRequest(
-    #         "src", self.raft_node_mock.id, "MID", "key", "val", BROADCAST_ALL_ADDR
-    #     )
-    #     redirect_message: Messages.MessageRedirect = Messages.MessageRedirect(
-    #         self.raft_node_mock.id, "src", "MID", BROADCAST_ALL_ADDR)
-    #     self.follower_state.on_client_put(incoming_put_req)
-    #     self.raft_node_mock.send.assert_called_once_with(redirect_message)
+    def test_on_interal_recv_request_vote_response_change_follower(self):
+        """
+         On receiving a vote with higher term number change from candidate to follower
+        """
+        self.candidate_state.term_number = 8
+        incoming_vote_resp: Messages.RequestVoteResponse = Messages.RequestVoteResponse(
+            "raft_node1", self.raft_node_mock.id, 9, True, self.candidate_state.leader_id
+        )
 
-    # def test_should_accept_vote_success(self):
-    #     incoming_vote_req: Messages.RequestVote = Messages.RequestVote(
-    #         "voter_src",
-    #         self.raft_node_mock.id,
-    #         0,
-    #         "voter_src",
-    #         0,
-    #         0
-    #     )
-    #     self.assertTrue(self.follower_state._should_accept_vote(
-    #         incoming_vote_req), "Should have accepted vote success")
-
-    # def test_should_accept_vote_fail_already_voted(self):
-    #     self.follower_state.voted_for = "voter_candidate_2"
-    #     incoming_vote_req: Messages.RequestVote = Messages.RequestVote(
-    #         "voter_src",
-    #         self.raft_node_mock.id,
-    #         1000,
-    #         "voter_src",
-    #         10,
-    #         999
-    #     )
-    #     self.assertFalse(self.follower_state._should_accept_vote(
-    #         incoming_vote_req), "Should not accept vote since already voted for a candidate")
-
-    # def test_should_accept_vote_fail_smaller_term_number(self):
-    #     self.follower_state.term_number = 1000
-    #     incoming_vote_req: Messages.RequestVote = Messages.RequestVote(
-    #         "voter_src",
-    #         self.raft_node_mock.id,
-    #         999,
-    #         "voter_src",
-    #         10,
-    #         999
-    #     )
-    #     self.assertFalse(self.follower_state._should_accept_vote(
-    #         incoming_vote_req), "Should not accept vote since term number is smaller")
-
-    # def test_should_accept_vote_fail_smaller_last_log_term_number(self):
-    #     self.follower_state.log.append(SetCommand(1000, {}))
-    #     self.follower_state.term_number = 1000
-    #     incoming_vote_req: Messages.RequestVote = Messages.RequestVote(
-    #         "voter_src",
-    #         self.raft_node_mock.id,
-    #         1000,
-    #         "voter_src",
-    #         10,
-    #         999
-    #     )
-    #     self.assertFalse(self.follower_state._should_accept_vote(
-    #         incoming_vote_req), "Should not accept vote since message last log term number 999 < 1000")
-
-    # def test_should_accept_vote_fail_same_last_log_term_number_shorter_len(self):
-    #     self.follower_state.log.append(SetCommand(1000, {}))
-    #     self.follower_state.log.append(SetCommand(1000, {}))
-    #     self.follower_state.term_number = 1000
-    #     incoming_vote_req: Messages.RequestVote = Messages.RequestVote(
-    #         "voter_src",
-    #         self.raft_node_mock.id,
-    #         1000,
-    #         "voter_src",
-    #         1,
-    #         999
-    #     )
-    #     self.assertFalse(self.follower_state._should_accept_vote(
-    #         incoming_vote_req), "Should not accept vote since message last log term number 999 < 1000")
-
-    # def test_on_interal_recv_request_vote_success(self):
-    #     """
-    #     Shold reject vote if follower has already voted
-    #     """
-    #     incoming_vote_req: Messages.RequestVote = Messages.RequestVote(
-    #         "voter_src",
-    #         self.raft_node_mock.id,
-    #         1000,
-    #         "voter_src",
-    #         10,
-    #         999)
-    #     outgoing_message: Messages.RequestVoteResponse = Messages.RequestVoteResponse(
-    #         self.raft_node_mock.id,
-    #         "voter_src",
-    #         1000,
-    #         True,
-    #     )
-    #     self.follower_state.receive_internal_message(incoming_vote_req)
-    #     self.raft_node_mock.send.assert_called_once_with(outgoing_message)
-
-    # def test_on_interal_recv_request_vote_response(self):
-    #     pass
+        self.candidate_state.receive_internal_message(incoming_vote_resp)
+        self.raft_node_mock.change_state.assert_called_once_with(Follower)
 
 
 if __name__ == '__main__':

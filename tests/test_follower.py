@@ -13,6 +13,7 @@ class TestFollower(unittest.TestCase):
         self.raft_node_mock.id = 0
         self.raft_node_mock.others = ["1", "2", "3", "4"]
         self.follower_state = Follower(raft_node=self.raft_node_mock)
+        self.raft_node_mock.state = self.follower_state
 
     def test_randomly_generate_election_timer(self):
         self.assertTrue(MAX_DURATION_NO_HEARTBEAT <= self.follower_state.randomly_generate_election_timer(

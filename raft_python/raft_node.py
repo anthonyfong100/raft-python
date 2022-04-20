@@ -35,7 +35,7 @@ class RaftNode:
     def send_hello(self):
         hello_msg: HelloMessage = HelloMessage(
             self.id, BROADCAST_ALL_ADDR, BROADCAST_ALL_ADDR)
-        print("Replica %s starting up" % self.id, flush=True)
+        logger.info("Replica %s starting up" % self.id, flush=True)
         self.socket.send(hello_msg)
 
     def process_response(self, req: ReqMessageType) -> any:
