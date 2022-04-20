@@ -13,11 +13,11 @@ class SocketWrapper:
         _socket.bind(('localhost', 0))
         return _socket
 
-    def send(self, message):
+    def send(self, message: dict):
         self.socket.sendto(json.dumps(message).encode(
             'utf-8'), ('localhost', self.port))
 
-    def receive(self, buff_size=BUFFER_SIZE) -> json:
+    def receive(self, buff_size=BUFFER_SIZE) -> dict:
         data, _ = self.socket.recvfrom(buff_size)
-        msg = data.decode('utf-8')
+        msg = json.loads(data.decode('utf-8'))
         return msg

@@ -112,7 +112,7 @@ def get_message_from_payload(payload: dict) -> Union[GetMessageRequest, PutMessa
             payload["dst"],
             payload["MID"],
             payload["key"],
-            payload["val"],
+            payload["value"],
             payload["leader"])
 
 
