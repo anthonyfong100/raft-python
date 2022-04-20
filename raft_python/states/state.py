@@ -1,3 +1,4 @@
+from email.message import Message
 import logging
 import raft_python.messages as Messages
 import time
@@ -73,6 +74,13 @@ class State(ABC):
         call_method: Callable = self._get_method_from_msg(msg)
         if call_method:
             return call_method(msg)
+
+    def receive_message(self, msg: Messages.IncomingMessageType):
+        if Messages.is_client_message(msg):
+            return self.received_client_message(msg)
+        elif Messages.is_internal_message(msg):
+            return self.receive_internal_message(msg)
+        raise ValueError(f"Invalid messaged received of type:{type(msg)}")
 
     @abstractmethod
     def on_client_put(self, msg: Messages.PutMessageRequest):

@@ -2,7 +2,7 @@ import logging
 import socket
 import json
 from raft_python.configs import BUFFER_SIZE, LOGGER_NAME
-from raft_python.messages import ReqMessageType
+from raft_python.messages import IncomingMessageType
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -17,7 +17,7 @@ class SocketWrapper:
         _socket.bind(('localhost', 0))
         return _socket
 
-    def send(self, message: ReqMessageType):
+    def send(self, message: IncomingMessageType):
         message_serialized = message.serialize()
         logger.debug(f"Sending Message:{message_serialized}\n")
         self.socket.sendto(json.dumps(message_serialized).encode(

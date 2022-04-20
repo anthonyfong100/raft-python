@@ -5,6 +5,7 @@ import socket
 from raft_python.kv_cache import KVCache
 from raft_python.raft_node import RaftNode
 from raft_python.socket_wrapper import SocketWrapper
+from raft_python.states.follower import Follower
 from raft_python.logger import set_up_logger
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='run a key-value store')
@@ -17,5 +18,7 @@ if __name__ == "__main__":
     socket: SocketWrapper = SocketWrapper(args.port)
     kv_cache: KVCache = KVCache()
     raft_node = RaftNode(socket, kv_cache, args.id, args.others)
+    follower: Follower = Follower(old_state=None, raft_node=raft_node)
+    raft_node.register_state(follower)
     raft_node.send_hello()
     raft_node.run()

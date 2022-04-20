@@ -182,5 +182,12 @@ def get_message_from_payload(payload: dict) -> Union[GetMessageRequest, PutMessa
 
 InternalMessageType = Union[RequestVote, RequestVoteResponse]
 ClientMessageType = Union[GetMessageRequest, PutMessageRequest]
-ReqMessageType = Union[HelloMessage, GetMessageRequest,
-                       PutMessageRequest, RequestVote, RequestVoteResponse]
+IncomingMessageType = Union[InternalMessageType, ClientMessageType]
+
+
+def is_internal_message(msg: IncomingMessageType):
+    return type(msg) == RequestVote or type(msg) == RequestVoteResponse
+
+
+def is_client_message(msg: IncomingMessageType):
+    return type(msg) == GetMessageRequest or type(msg) == PutMessageRequest

@@ -8,7 +8,7 @@ from raft_python.socket_wrapper import SocketWrapper
 from raft_python.configs import BROADCAST_ALL_ADDR, MAX_DURATION_NO_HEARTBEAT, LOGGER_NAME
 from raft_python.messages import GetMessageRequest,\
     HelloMessage, MessageFail, PutMessageRequest, RequestVoteResponse,\
-    get_message_from_payload, ReqMessageType, RequestVote
+    get_message_from_payload, IncomingMessageType, RequestVote
 from raft_python.kv_cache import KVCache
 from raft_python.commands import ALL_COMMANDS
 
@@ -35,20 +35,10 @@ class RaftNode:
     def send_hello(self):
         hello_msg: HelloMessage = HelloMessage(
             self.id, BROADCAST_ALL_ADDR, BROADCAST_ALL_ADDR)
-        logger.info("Replica %s starting up" % self.id, flush=True)
+        logger.info("Replica %s starting up" % self.id)
         self.socket.send(hello_msg)
 
-    def process_response(self, req: ReqMessageType) -> any:
-        if type(req) == GetMessageRequest or type(req) == PutMessageRequest:
-            return self.process_get_client_req(req)
-        elif type(req) == RequestVote:
-            return self.process_request_vote_req(req)
-        elif type(req) == RequestVoteResponse:
-            return self.process_request_vote_response(req)
-        raise ValueError(
-            f"received unknown message type:{type(req)} message:{req.serialize()}")
-
-    def send(self, message: ReqMessageType):
+    def send(self, message: IncomingMessageType):
         """Wrapper to call internal socket Manager to send message"""
         self.socket.send(message)
 
@@ -65,12 +55,9 @@ class RaftNode:
     # TODO: Wire up all the methods calls to state & add heartbeat mechanism
     def run(self):
         while True:
-            if self.should_run_election():
-                self.run_election()
-
             # make socket connection non-blocking
             socket = select.select([self.socket.socket], [], [], 0.1)[0]
             for _ in socket:
                 msg = self.socket.receive()
-                req: ReqMessageType = get_message_from_payload(msg)
-                self.process_response(req)
+                req: IncomingMessageType = get_message_from_payload(msg)
+                self.state.receive_message(req)
