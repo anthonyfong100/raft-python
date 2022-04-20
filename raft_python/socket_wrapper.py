@@ -16,6 +16,7 @@ class SocketWrapper:
 
     def send(self, message: ReqMessageType):
         message_serialized = message.serialize()
+        print(f"Sending Message:{message_serialized}\n", flush=True)
         self.socket.sendto(json.dumps(message_serialized).encode(
             'utf-8'), ('localhost', self.port))
 

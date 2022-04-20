@@ -2,7 +2,7 @@ from enum import Enum
 from typing import List
 from raft_python.socket_wrapper import SocketWrapper
 from raft_python.configs import BROADCAST_ALL_ADDR
-from raft_python.messages import GetMessageRequest, HelloMessage, PutMessageRequest, RequestVoteResponse, get_message_from_payload, ReqMessageType, RequestVote
+from raft_python.messages import GetMessageRequest, HelloMessage, MessageFail, PutMessageRequest, RequestVoteResponse, get_message_from_payload, ReqMessageType, RequestVote
 from raft_python.kv_cache import KVCache
 from raft_python.commands import ALL_COMMANDS
 
@@ -28,13 +28,13 @@ class RaftNode:
         # election node variables
         self.role: NodeRole = NodeRole.FOLLOWER
         self.num_votes_received: int = 0
+        self.leader = BROADCAST_ALL_ADDR
 
     def send_hello(self):
         hello_msg: HelloMessage = HelloMessage(
             self.id, BROADCAST_ALL_ADDR, BROADCAST_ALL_ADDR)
         print("Replica %s starting up" % self.id, flush=True)
         self.socket.send(hello_msg)
-        print("Sent hello message: %s" % hello_msg.serialize(), flush=True)
 
     def run_election(self) -> None:
         if self.role != NodeRole.CANDIDATE:
@@ -55,8 +55,13 @@ class RaftNode:
                 BROADCAST_ALL_ADDR)  # not sure who is the leader so broadcast to all
             self.socket.send(request_vote)
 
+    #TODO: implement
     def process_get_client_req(self, req: GetMessageRequest) -> None:
-        print("Received Client Req message '%s'" % (req,), flush=True)
+        print("Received Client Req message '%s'" %
+              (req.serialize()), flush=True)
+        failed_resp: MessageFail = MessageFail(
+            self.id, req.src, req.MID, self.leader)
+        self.socket.send(failed_resp)
 
     def process_request_vote_req(self, req: RequestVote) -> None:
         print("Received Election Req message '%s'" % (req,), flush=True)
