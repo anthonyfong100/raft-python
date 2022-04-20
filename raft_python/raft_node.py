@@ -1,11 +1,14 @@
 import time
+import logging
 from enum import Enum
 from typing import List
 from raft_python.socket_wrapper import SocketWrapper
-from raft_python.configs import BROADCAST_ALL_ADDR, MAX_DURATION_NO_HEARTBEAT
+from raft_python.configs import BROADCAST_ALL_ADDR, MAX_DURATION_NO_HEARTBEAT, LOGGER_NAME
 from raft_python.messages import GetMessageRequest, HelloMessage, MessageFail, PutMessageRequest, RequestVoteResponse, get_message_from_payload, ReqMessageType, RequestVote
 from raft_python.kv_cache import KVCache
 from raft_python.commands import ALL_COMMANDS
+
+logger = logging.getLogger(LOGGER_NAME)
 
 
 class NodeRole(Enum):
@@ -31,6 +34,7 @@ class RaftNode:
         self.num_votes_received: int = 0
         self.leader = BROADCAST_ALL_ADDR
         self.last_heartbeat = time.time()
+        logger.info("Starting Raft Node")
 
     def send_hello(self):
         hello_msg: HelloMessage = HelloMessage(
@@ -41,7 +45,7 @@ class RaftNode:
     def run_election(self) -> None:
         if self.role != NodeRole.FOLLOWER:
             return
-        print("Running elections", flush=True)
+        logger.info("Running elections")
         self.role = NodeRole.CANDIDATE
         self.term += 1
         self.num_votes_received = 1
@@ -60,17 +64,18 @@ class RaftNode:
 
     #TODO: implement
     def process_get_client_req(self, req: GetMessageRequest) -> None:
-        print("Received Client Req message '%s'" %
-              (req.serialize()), flush=True)
+        logger.debug("Received Client Req message '%s'" %
+                     (req.serialize()))
         failed_resp: MessageFail = MessageFail(
             self.id, req.src, req.MID, self.leader)
         self.socket.send(failed_resp)
 
     def process_request_vote_req(self, req: RequestVote) -> None:
-        print("Received Election Req message '%s'" % (req,), flush=True)
+        logger.debug("Received Election Req message '%s'" % (req,))
 
     def process_request_vote_response(self, req: RequestVoteResponse) -> None:
-        print("Received Election Response message '%s'" % (req,), flush=True)
+        logger.debug("Received Election Response message '%s'" %
+                     (req,))
 
     def process_response(self, req: ReqMessageType) -> any:
         if type(req) == GetMessageRequest or type(req) == PutMessageRequest:

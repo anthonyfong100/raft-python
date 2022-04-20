@@ -13,3 +13,6 @@ simple:
 
 unit-test:
 	python3 -m unittest -v
+
+clean:
+	rm ./raft_python_debug.log
