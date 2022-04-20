@@ -1,3 +1,4 @@
+import select
 import time
 import logging
 from enum import Enum
@@ -94,6 +95,10 @@ class RaftNode:
         while True:
             if self.should_run_election():
                 self.run_election()
-            msg = self.socket.receive()
-            req: ReqMessageType = get_message_from_payload(msg)
-            self.process_response(req)
+
+            # make socket connection non-blocking
+            socket = select.select([self.socket.socket], [], [], 0.1)[0]
+            for _ in socket:
+                msg = self.socket.receive()
+                req: ReqMessageType = get_message_from_payload(msg)
+                self.process_response(req)
