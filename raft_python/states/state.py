@@ -42,11 +42,11 @@ class State(ABC):
             Messages.RequestVote: self.on_interal_recv_request_vote,
             Messages.RequestVoteResponse: self.on_interal_recv_request_vote_response
         }
-        call_method: Callable = method_mapping.get(msg.type, None)
+        call_method: Callable = method_mapping.get(type(msg), None)
         if call_method:
             return call_method(msg)
         logger.warning(
-            f"Received invalid message with no method found\n message:{msg.serialize()} method mapping:{self.method_mapping}")
+            f"Received invalid message with no method found\n message:{type(msg)} method mapping:{method_mapping}")
         return None
 
     def receive_internal_message(self, msg: Messages.InternalMessageType) -> None:

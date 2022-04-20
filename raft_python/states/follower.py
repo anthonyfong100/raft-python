@@ -37,23 +37,31 @@ class Follower(State):
         )
         self.raft_node.send(redirect_message)
 
-    def on_interal_recv_request_vote(self, msg: Messages.RequestVote):
-        """Decide if we approve the new leader request"""
+    def _should_accept_vote(self, msg: Messages.RequestVote) -> bool:
         is_valid_msg_term_number: bool = msg.term_number >= self.term_number
         is_valid_candidate: bool = self.voted_for is None or self.voted_for == msg.candidate_id
-        is_valid_last_log_term_number: bool = (msg.last_log_term_number > self.log[-1].term_number) or \
-            (msg.last_log_term_number >
-             self.log[-1].term_number and msg.last_log_index >= len(self.log))
+        last_log_term_number_follower: int = self.log[-1].term_number if self.log else 0
+        is_valid_last_log_term_number: bool = (msg.last_log_term_number > last_log_term_number_follower) or \
+            (msg.last_log_term_number == last_log_term_number_follower and
+             msg.last_log_index >= len(self.log))
 
-        is_vote_success = is_valid_msg_term_number and is_valid_candidate and is_valid_last_log_term_number
-        if is_vote_success:
+        return is_valid_msg_term_number and is_valid_candidate and is_valid_last_log_term_number
+
+    def on_interal_recv_request_vote(self, msg: Messages.RequestVote):
+        """Decide if we approve the new leader request"""
+        should_accept_vote: bool = self._should_accept_vote(msg)
+        if should_accept_vote:
             self.voted_for = msg.candidate_id
             self.last_hearbeat = time.time()  # reset the heartbeat
             logger.info(
                 f"Voting for {msg.candidate_id}")
 
         vote_response: Messages.RequestVoteResponse = Messages.RequestVoteResponse(
-            self.term_number, is_vote_success)
+            self.raft_node.id, msg.src,
+            self.term_number,
+            should_accept_vote,
+            self.leader_id
+        )
         self.raft_node.send(vote_response)
 
     def on_interal_recv_request_vote_response(self, msg: Messages.RequestVoteResponse):
