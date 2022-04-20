@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Union
 
 
 class CommandType(Enum):
@@ -27,3 +28,6 @@ class GetCommand(BaseCommand):
 
     def is_valid(self):
         return "key" in self.args
+
+
+ALL_COMMANDS = Union[SetCommand, GetCommand]
