@@ -41,7 +41,7 @@ class TestFollower(unittest.TestCase):
         self.assertEqual(self.raft_node_mock.send.call_count,
                          len(self.candidate_state.cluster_nodes))
 
-    def test_on_interal_recv_request_vote_response_success(self):
+    def test_on_internal_recv_request_vote_response_success(self):
         """
          On receiving a vote need to increment count and call change state if got majority
         """
@@ -57,7 +57,7 @@ class TestFollower(unittest.TestCase):
         self.assertEqual(self.candidate_state.vote_count, 3)
         self.raft_node_mock.change_state.assert_called_once_with(Leader)
 
-    def test_on_interal_recv_request_vote_response_change_follower(self):
+    def test_on_internal_recv_request_vote_response_change_follower(self):
         """
          On receiving a vote with higher term number change from candidate to follower
         """

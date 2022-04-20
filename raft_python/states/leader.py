@@ -19,7 +19,7 @@ class Leader(State):
         """Regularly send out heartbeat messages"""
         pass
 
-    # TODO: send redirect message
+    # TODO: send output
     def on_client_put(self, msg: Messages.PutMessageRequest):
         logger.debug(f"Received put request: {msg.serialize()}")
         pass
@@ -28,7 +28,7 @@ class Leader(State):
     def on_client_get(self, msg: Messages.GetMessageRequest):
         pass
 
-    def on_interal_recv_request_vote(self, msg: Messages.RequestVote):
+    def on_internal_recv_request_vote(self, msg: Messages.RequestVote):
         """Decide if we approve the new leader request"""
         is_valid_msg_term_number: bool = msg.term_number >= self.term_number
         is_valid_candidate: bool = self.voted_for is None or self.voted_for == msg.candidate_id
@@ -47,5 +47,5 @@ class Leader(State):
             self.term_number, is_vote_success)
         self.raft_node.send(vote_response)
 
-    def on_interal_recv_request_vote_response(self, msg: Messages.RequestVoteResponse):
+    def on_internal_recv_request_vote_response(self, msg: Messages.RequestVoteResponse):
         pass

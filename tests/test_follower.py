@@ -107,7 +107,7 @@ class TestFollower(unittest.TestCase):
         self.assertFalse(self.follower_state._should_accept_vote(
             incoming_vote_req), "Should not accept vote since message last log term number 999 < 1000")
 
-    def test_on_interal_recv_request_vote_success(self):
+    def test_on_internal_recv_request_vote_success(self):
         """
         Shold reject vote if follower has already voted
         """
@@ -127,7 +127,7 @@ class TestFollower(unittest.TestCase):
         self.follower_state.receive_internal_message(incoming_vote_req)
         self.raft_node_mock.send.assert_called_once_with(outgoing_message)
 
-    def test_on_interal_recv_request_vote_response(self):
+    def test_on_internal_recv_request_vote_response(self):
         pass
 
 

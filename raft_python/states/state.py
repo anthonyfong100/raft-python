@@ -39,8 +39,8 @@ class State(ABC):
         method_mapping: dict = {
             Messages.GetMessageRequest: self.on_client_get,
             Messages.PutMessageRequest: self.on_client_put,
-            Messages.RequestVote: self.on_interal_recv_request_vote,
-            Messages.RequestVoteResponse: self.on_interal_recv_request_vote_response
+            Messages.RequestVote: self.on_internal_recv_request_vote,
+            Messages.RequestVoteResponse: self.on_internal_recv_request_vote_response
         }
         call_method: Callable = method_mapping.get(type(msg), None)
         if call_method:
@@ -83,9 +83,9 @@ class State(ABC):
         pass
 
     @abstractmethod
-    def on_interal_recv_request_vote(self, msg: Messages.RequestVote):
+    def on_internal_recv_request_vote(self, msg: Messages.RequestVote):
         pass
 
     @abstractmethod
-    def on_interal_recv_request_vote_response(self, msg: Messages.RequestVoteResponse):
+    def on_internal_recv_request_vote_response(self, msg: Messages.RequestVoteResponse):
         pass

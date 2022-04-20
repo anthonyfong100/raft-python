@@ -47,7 +47,7 @@ class Follower(State):
 
         return is_valid_msg_term_number and is_valid_candidate and is_valid_last_log_term_number
 
-    def on_interal_recv_request_vote(self, msg: Messages.RequestVote):
+    def on_internal_recv_request_vote(self, msg: Messages.RequestVote):
         """Decide if we approve the new leader request"""
         should_accept_vote: bool = self._should_accept_vote(msg)
         if should_accept_vote:
@@ -64,5 +64,5 @@ class Follower(State):
         )
         self.raft_node.send(vote_response)
 
-    def on_interal_recv_request_vote_response(self, msg: Messages.RequestVoteResponse):
+    def on_internal_recv_request_vote_response(self, msg: Messages.RequestVoteResponse):
         pass

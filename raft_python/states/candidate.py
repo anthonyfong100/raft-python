@@ -32,7 +32,7 @@ class Candidate(Follower):
                 BROADCAST_ALL_ADDR)  # TODO: Check if should broadcast leader as unknown
             self.raft_node.send(request_vote)
 
-    def on_interal_recv_request_vote_response(self, msg: Messages.RequestVoteResponse):
+    def on_internal_recv_request_vote_response(self, msg: Messages.RequestVoteResponse):
         self.vote_count += msg.vote_granted
         logger.info(
             f"Received vote result of {msg.serialize()} new_vote_count:{self.vote_count}"
