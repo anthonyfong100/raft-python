@@ -3,7 +3,7 @@ from raft_python.messages import HelloMessage
 from raft_python.raft_node import RaftNode
 from raft_python.socket_wrapper import SocketWrapper
 from raft_python.kv_cache import KVCache
-from raft_python.configs import BROADCAST_ADDR
+from raft_python.configs import BROADCAST_ALL_ADDR
 from unittest.mock import Mock
 
 
@@ -17,7 +17,7 @@ class TestRaftNode(unittest.TestCase):
     def test_send_hello(self):
         self.raft_node.send_hello()
         socket_send_args = HelloMessage(
-            self.raft_node.id, BROADCAST_ADDR, BROADCAST_ADDR)
+            self.raft_node.id, BROADCAST_ALL_ADDR, BROADCAST_ALL_ADDR)
         self.socket_mock.send.assert_called_with(socket_send_args)
 
 
