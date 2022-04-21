@@ -1,0 +1,80 @@
+import time
+import logging
+import random
+from typing import Callable
+import raft_python.messages as Messages
+from raft_python.states.state import State
+from raft_python.configs import MAX_DURATION_NO_HEARTBEAT, LOGGER_NAME
+logger = logging.getLogger(LOGGER_NAME)
+
+
+class Follower(State):
+    name = "Follower"
+
+    def __init__(self, old_state: State = None, raft_node: "RaftNode" = None):
+        super().__init__(old_state, raft_node)
+        self.voted_for = None
+        self.election_timer = self.randomly_generate_election_timer()
+        # TODO: fix prevent cyclic import dependency
+        from raft_python.states.candidate import Candidate
+        self.node_raft_command = self.raft_node.change_state
+        self.execution_time = self.last_hearbeat + self.election_timer
+        self.args = (Candidate)
+
+    def randomly_generate_election_timer(self, timer_range=MAX_DURATION_NO_HEARTBEAT):
+        """Generate a random election timer within range"""
+        election_timer_ms: int = random.randint(
+            timer_range * 1000, 2 * 1000 * timer_range)
+        return election_timer_ms / 1000.0
+
+    def on_client_put(self, msg: Messages.PutMessageRequest):
+        redirect_message: Messages.MessageRedirect = Messages.MessageRedirect(
+            self.raft_node.id,
+            msg.src,
+            msg.MID,
+            self.leader_id,
+        )
+        self.raft_node.send(redirect_message)
+
+    def on_client_get(self, msg: Messages.GetMessageRequest):
+        redirect_message: Messages.MessageRedirect = Messages.MessageRedirect(
+            self.raft_node.id,
+            msg.src,
+            msg.MID,
+            self.leader_id,
+        )
+        self.raft_node.send(redirect_message)
+
+    def _should_accept_vote(self, msg: Messages.RequestVote) -> bool:
+        is_valid_msg_term_number: bool = msg.term_number >= self.term_number
+        is_valid_candidate: bool = self.voted_for is None or self.voted_for == msg.candidate_id
+        last_log_term_number_follower: int = self.log[-1].term_number if self.log else 0
+        is_valid_last_log_term_number: bool = (msg.last_log_term_number > last_log_term_number_follower) or \
+            (msg.last_log_term_number == last_log_term_number_follower and
+             msg.last_log_index >= len(self.log))
+
+        return is_valid_msg_term_number and is_valid_candidate and is_valid_last_log_term_number
+
+    def on_internal_recv_request_vote(self, msg: Messages.RequestVote):
+        """Decide if we approve the new leader request"""
+        from raft_python.states.candidate import Candidate
+        should_accept_vote: bool = self._should_accept_vote(msg)
+        if should_accept_vote:
+            self.voted_for = msg.candidate_id
+            self.last_hearbeat = time.time()  # reset the heartbeat
+            self.node_raft_command = self.raft_node.change_state
+            self.args = (Candidate)
+            self.execution_time = self.last_hearbeat + self.election_timer
+            logger.info(
+                f"Voting for {msg.candidate_id}")
+
+        vote_response: Messages.RequestVoteResponse = Messages.RequestVoteResponse(
+            self.raft_node.id, msg.src,
+            self.term_number,
+            should_accept_vote,
+            self.leader_id
+        )
+        self.raft_node.send(vote_response)
+
+    def on_internal_recv_request_vote_response(self, msg: Messages.RequestVoteResponse):
+        pass

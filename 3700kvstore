@@ -2,9 +2,11 @@
 
 import argparse
 import socket
-import json
-from raft_python.kv_store import KVStore
+from raft_python.kv_cache import KVCache
+from raft_python.raft_node import RaftNode
 from raft_python.socket_wrapper import SocketWrapper
+from raft_python.states.follower import Follower
+from raft_python.logger import set_up_logger
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='run a key-value store')
     parser.add_argument('port', type=int, help="Port number to communicate")
@@ -12,6 +14,11 @@ if __name__ == "__main__":
     parser.add_argument('others', metavar='others', type=str,
                         nargs='+', help="IDs of other replicas")
     args = parser.parse_args()
+    logger = set_up_logger(args.id)
     socket: SocketWrapper = SocketWrapper(args.port)
-    kv_store = KVStore(socket, args.id, args.others)
-    kv_store.run()
+    kv_cache: KVCache = KVCache()
+    raft_node = RaftNode(socket, kv_cache, args.id, args.others)
+    follower: Follower = Follower(old_state=None, raft_node=raft_node)
+    raft_node.register_state(follower)
+    raft_node.send_hello()
+    raft_node.run()

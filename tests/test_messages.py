@@ -3,6 +3,18 @@ import raft_python.messages as messages
 
 
 class TestMessageTypes(unittest.TestCase):
+    def test_serialization_hello(self):
+        hello_req = messages.HelloMessage(
+            "src", "dst", "leader")
+        expected_payload: dict = {
+            "src": "src",
+            "dst": "dst",
+            "type": "hello",
+            "leader": "leader",
+        }
+        self.assertDictEqual(hello_req.serialize(), expected_payload,
+                             "Hello request serialization should be identical")
+
     def test_serialization_get(self):
         get_req = messages.GetMessageRequest(
             "src", "dst", "MID", "key", "leader")
