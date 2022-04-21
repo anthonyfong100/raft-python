@@ -176,7 +176,7 @@ class AppendEntriesResponse(BaseMessage):
                  match_index: int,
                  success: bool,
                  leader: str = BROADCAST_ALL_ADDR):
-        super().__init__(src, dst, MessageTypes.APPEND_ENTRIES, leader)
+        super().__init__(src, dst, MessageTypes.APPEND_ENTRIES_RESPONSE, leader)
         self.term_number = term_number
         self.match_index = match_index
         self.success = success
