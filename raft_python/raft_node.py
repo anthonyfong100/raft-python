@@ -52,6 +52,10 @@ class RaftNode:
         new_created_state: "ALL_NODE_STATES" = new_state(self.state, self)
         self.state = new_created_state
 
+    # KV Store execute wrapper
+    def execute(self, command: ALL_COMMANDS):
+        self.executor.execute(command)
+
     # TODO: Wire up all the methods calls to state & add heartbeat mechanism
     def run(self):
         while True:
