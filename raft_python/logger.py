@@ -4,7 +4,7 @@ from raft_python.configs import LOGGER_NAME
 
 def set_up_logger(id: int):
     logger = logging.getLogger(LOGGER_NAME)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
     # create console handler logging info messages
     console_handler = logging.StreamHandler()
