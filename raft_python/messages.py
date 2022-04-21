@@ -1,5 +1,6 @@
-from typing import Union
+from typing import Union, List
 from raft_python.configs import BROADCAST_ALL_ADDR
+from raft_python.commands import ALL_COMMANDS
 from enum import Enum
 
 
@@ -12,6 +13,7 @@ class MessageTypes(Enum):
     HELLO = "hello"
     REQUEST_VOTE = "request_vote"
     REQUEST_VOTE_RESPONSE = "request_vote_response"
+    APPEND_ENTRIES = "append_entries"
 
 
 class BaseMessage:
@@ -143,6 +145,26 @@ class RequestVoteResponse(BaseMessage):
         super().__init__(src, dst, MessageTypes.REQUEST_VOTE_RESPONSE, leader)
         self.term_number = term_number
         self.vote_granted = vote_granted
+
+
+class AppendEntriesReq(BaseMessage):
+    def __init__(self,
+                 src: str,
+                 dst: str,
+                 term_number: int,
+                 leader_id: str,
+                 prev_log_index: int,
+                 prev_log_term_number: int,
+                 entries: List[ALL_COMMANDS],
+                 leader_commit_index: int,
+                 leader: str = BROADCAST_ALL_ADDR):
+        super().__init__(src, dst, MessageTypes.APPEND_ENTRIES, leader)
+        self.term_number = term_number
+        self.leader_id = leader_id
+        self.prev_log_index = prev_log_index
+        self.prev_log_term_number = prev_log_term_number
+        self.entries = entries
+        self.leader_commit_index = leader_commit_index
 
 
 def get_message_from_payload(payload: dict) -> Union[GetMessageRequest, PutMessageRequest]:

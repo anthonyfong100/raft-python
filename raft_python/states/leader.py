@@ -15,12 +15,42 @@ class Leader(State):
         self.execution_time = self.last_hearbeat + HEARTBEAT_INTERNVAL
         self.args = None
 
-        # self.match_index = {node: 0 for node in self.cluster_nodes}
-        # self.next_index = {node: 0 for node in self.cluster_nodes}
+        self.match_index = {node: 0 for node in self.cluster_nodes}
+        self.next_index = {node: 0 for node in self.cluster_nodes}
+        self.commit_index = 0
+        self.send_heartbeat()
+
+    # TODO: Modfiy this to call in a loop
+    def append_entries(self, is_heartbeat=False):
+        for peer in self.cluster_nodes:
+            prev_log_index: int = self.next_index[peer]
+            prev_log_term: int = self.log[prev_log_index].term_number if len(
+                self.log) > prev_log_index else 0
+            msg: Messages.AppendEntriesReq = Messages.AppendEntriesReq(
+                src=self.raft_node.id,
+                dst=peer,
+                term_number=self.term_number,
+                leader_id=self.raft_node.id,
+                prev_log_index=prev_log_index,
+                prev_log_term_number=prev_log_term,
+                entries=[] if is_heartbeat else [],  # TODO: fix this []
+                leader_commit_index=self.commit_index,
+                leader=self.raft_node.id,
+            )
+            logger.debug(
+                f"Making AppendEntriesRPC call with {msg.serialize()}")
+
+            self.raft_node.send(msg)
+
+        # timeout = randrange(1, 4) * 10 ** (-1 if config.debug else -2)
+        # loop = asyncio.get_event_loop()
+        # self.append_timer = loop.call_later(timeout, self.send_append_entries)
 
     def send_heartbeat(self):
         logger.critical("sending heartbeat")
+        self.append_entries(is_heartbeat=True)
         self.last_hearbeat = time.time()
+        self.execution_time = self.last_hearbeat + HEARTBEAT_INTERNVAL
 
     # TODO: Remove sending heartbeats
     def destroy(self):

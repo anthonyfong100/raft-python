@@ -10,7 +10,7 @@ from raft_python.commands import SetCommand
 from raft_python.states.leader import Leader
 
 
-class TestFollower(unittest.TestCase):
+class TestCandidate(unittest.TestCase):
     def setUp(self):
         self.raft_node_mock = Mock(RaftNode)
         self.raft_node_mock.id = 1
