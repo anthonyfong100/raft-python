@@ -40,7 +40,7 @@ class RaftNode:
 
     def send(self, message: IncomingMessageType):
         """Wrapper to call internal socket Manager to send message"""
-        self.socket.send(message)
+        self.socket.send(message.serialize())
 
     # State wrapper functions
     def register_state(self, state: "ALL_NODE_STATES"):
