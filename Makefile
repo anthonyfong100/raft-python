@@ -12,7 +12,10 @@ simple:
 	./run configs/simple-1.json 
 
 unit-test:
-	python3 -m unittest -v
+	python3 -m unittest discover ./tests/unit -v
+
+integration-test:
+	python3 -m unittest discover ./tests/integration -v
 
 clean:
 	rm ./raft_python_debug.log

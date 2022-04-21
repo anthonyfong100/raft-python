@@ -7,6 +7,7 @@ from raft_python.states.follower import Follower
 from raft_python.commands import SetCommand
 
 
+# Unit test for follower
 class TestFollower(unittest.TestCase):
     def setUp(self):
         self.raft_node_mock = Mock(RaftNode)
@@ -144,6 +145,16 @@ class TestFollower(unittest.TestCase):
             self.follower_state._is_valid_append_entries_req(incoming_vote_req))
 
     # TODO: add in more test for is valid append entries
+
+
+# Integration test for follower
+class TestFollowerIntegration(unittest.TestCase):
+    def setUp(self):
+        self.raft_node_mock = Mock(RaftNode)
+        self.raft_node_mock.id = 0
+        self.raft_node_mock.others = ["1", "2", "3", "4"]
+        self.follower_state = Follower(raft_node=self.raft_node_mock)
+        self.raft_node_mock.state = self.follower_state
 
 
 if __name__ == '__main__':
