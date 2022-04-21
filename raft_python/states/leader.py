@@ -67,7 +67,7 @@ class Leader(State):
         logger.debug(f"Received put request: {msg.serialize()}")
         pass
 
-    # TODO: send redirect message
+    # TODO: send output
     def on_client_get(self, msg: Messages.GetMessageRequest):
         pass
 
@@ -75,4 +75,7 @@ class Leader(State):
         pass
 
     def on_internal_recv_request_vote_response(self, msg: Messages.RequestVoteResponse):
+        pass
+
+    def on_internal_recv_append_entries(self, msg: Messages.AppendEntriesReq):
         pass

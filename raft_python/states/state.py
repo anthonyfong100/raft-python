@@ -41,8 +41,8 @@ class State(ABC):
             Messages.GetMessageRequest: self.on_client_get,
             Messages.PutMessageRequest: self.on_client_put,
             Messages.RequestVote: self.on_internal_recv_request_vote,
-            Messages.RequestVoteResponse: self.on_internal_recv_request_vote_response
-        }
+            Messages.RequestVoteResponse: self.on_internal_recv_request_vote_response,
+            Messages.AppendEntriesReq: self.on_internal_recv_append_entries}
         call_method: Callable = method_mapping.get(type(msg), None)
         if call_method:
             return call_method(msg)
@@ -96,4 +96,8 @@ class State(ABC):
 
     @abstractmethod
     def on_internal_recv_request_vote_response(self, msg: Messages.RequestVoteResponse):
+        pass
+
+    @abstractmethod
+    def on_internal_recv_append_entries(self, msg: Messages.AppendEntriesReq):
         pass

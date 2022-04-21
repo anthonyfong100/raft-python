@@ -14,6 +14,7 @@ class MessageTypes(Enum):
     REQUEST_VOTE = "request_vote"
     REQUEST_VOTE_RESPONSE = "request_vote_response"
     APPEND_ENTRIES = "append_entries"
+    APPEND_ENTRIES_RESPONSE = "append_entries_response"
 
 
 class BaseMessage:
@@ -167,6 +168,20 @@ class AppendEntriesReq(BaseMessage):
         self.leader_commit_index = leader_commit_index
 
 
+class AppendEntriesResponse(BaseMessage):
+    def __init__(self,
+                 src: str,
+                 dst: str,
+                 term_number: int,
+                 match_index: int,
+                 success: bool,
+                 leader: str = BROADCAST_ALL_ADDR):
+        super().__init__(src, dst, MessageTypes.APPEND_ENTRIES, leader)
+        self.term_number = term_number
+        self.match_index = match_index
+        self.success = success
+
+
 def get_message_from_payload(payload: dict) -> Union[GetMessageRequest, PutMessageRequest]:
     if payload.get("type", None) == MessageTypes.GET.value:
         return GetMessageRequest(
@@ -213,17 +228,28 @@ def get_message_from_payload(payload: dict) -> Union[GetMessageRequest, PutMessa
             payload["leader_commit_index"],
             payload["leader"],
         )
+    elif payload.get("type", None) == MessageTypes.APPEND_ENTRIES_RESPONSE.value:
+        return AppendEntriesResponse(
+            payload["src"],
+            payload["dst"],
+            int(payload["term_number"]),
+            payload["match_index"],
+            payload["success"],
+            payload["leader"],
+        )
     raise ValueError(
         f"Received payload is of unknown type\n Payload:{payload}")
 
 
-InternalMessageType = Union[RequestVote, RequestVoteResponse, AppendEntriesReq]
+InternalMessageType = Union[RequestVote, RequestVoteResponse,
+                            AppendEntriesReq, AppendEntriesResponse]
 ClientMessageType = Union[GetMessageRequest, PutMessageRequest]
 IncomingMessageType = Union[InternalMessageType, ClientMessageType]
 
 
 def is_internal_message(msg: IncomingMessageType):
-    return type(msg) == RequestVote or type(msg) == RequestVoteResponse or type(msg) == AppendEntriesReq
+    return type(msg) == RequestVote or type(msg) == RequestVoteResponse or \
+        type(msg) == AppendEntriesReq or type(msg) == AppendEntriesResponse
 
 
 def is_client_message(msg: IncomingMessageType):
