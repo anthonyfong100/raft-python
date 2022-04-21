@@ -17,6 +17,9 @@ unit-test:
 integration-test:
 	python3 -m unittest discover ./tests/integration -v
 
+ut-integration-test:
+	python3 -m unittest discover tests -v
+	
 clean:
 	rm ./raft_python_debug.log
 
