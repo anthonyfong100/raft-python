@@ -173,8 +173,11 @@ def get_message_from_payload(payload: dict) -> Union[GetMessageRequest, PutMessa
         )
     elif payload.get("type", None) == MessageTypes.REQUEST_VOTE_RESPONSE.value:
         return RequestVoteResponse(
+            payload["src"],
+            payload["dst"],
             int(payload["term_number"]),
             payload["vote_granted"],
+            payload["leader"]
         )
     raise ValueError(
         f"Received payload is of unknown type\n Payload:{payload}")

@@ -50,11 +50,20 @@ class RaftNode:
         logging.info(
             f"State changed from {type(self.state)} to {type(new_state)}")
         new_created_state: "ALL_NODE_STATES" = new_state(self.state, self)
+        self.state.destroy()
         self.state = new_created_state
 
     # TODO: Wire up all the methods calls to state & add heartbeat mechanism
     def run(self):
         while True:
+            # check if there are any looping messages
+            if self.state.node_raft_command is not None:
+                # execute any commands
+                if time.time() > self.state.execution_time:
+                    # execute here
+                    self.state.node_raft_command(self.state.args)
+                    # execute_loop_commands(callable, args)
+
             # make socket connection non-blocking
             socket = select.select([self.socket.socket], [], [], 0.1)[0]
             for _ in socket:

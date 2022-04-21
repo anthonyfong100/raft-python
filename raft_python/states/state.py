@@ -33,8 +33,10 @@ class State(ABC):
             self.log = []
             self.cluster_nodes: List[str] = self.raft_node.others
 
-        self.loop_send_messages = []
         self.last_hearbeat = time.time()
+        self.node_raft_command = None
+        self.execution_time = None
+        self.args = None
 
     def _get_method_from_msg(self, msg: Messages.InternalMessageType) -> Callable:
         method_mapping: dict = {
@@ -53,7 +55,7 @@ class State(ABC):
     def receive_internal_message(self, msg: Messages.InternalMessageType) -> None:
         """Receive internal message used for elections / voting and call the right method"""
         from raft_python.states.follower import Follower
-        logger.debug('Received %s from %s', msg.serialize())
+        logger.debug(f'Received {msg.serialize()}')
 
         if self.term_number < msg.term_number:
             # update term number to be the maximum
@@ -96,4 +98,8 @@ class State(ABC):
 
     @abstractmethod
     def on_internal_recv_request_vote_response(self, msg: Messages.RequestVoteResponse):
+        pass
+
+    @abstractmethod
+    def destroy(self):
         pass
