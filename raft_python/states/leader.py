@@ -7,6 +7,8 @@ logger = logging.getLogger(LOGGER_NAME)
 
 
 class Leader(State):
+    name = "Leader"
+
     def __init__(self, old_state: "Candidate" = None, raft_node: "RaftNode" = None):
         super().__init__(old_state, raft_node)
         logger.critical(f"Leader with Term:{self.term_number}")

@@ -11,8 +11,6 @@ logger = logging.getLogger(LOGGER_NAME)
 
 # Abstract class for all state methods
 class State(ABC):
-    __metaclass__ = ABCMeta
-
     def __init__(self, old_state: "State" = None, raft_node: "RaftNode" = None):
         """State is initialized passing an orchestator instance when first
         deployed. Subsequent state changes use the old_state parameter to

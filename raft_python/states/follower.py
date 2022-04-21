@@ -9,6 +9,8 @@ logger = logging.getLogger(LOGGER_NAME)
 
 
 class Follower(State):
+    name = "Follower"
+
     def __init__(self, old_state: State = None, raft_node: "RaftNode" = None):
         super().__init__(old_state, raft_node)
         self.voted_for = None
