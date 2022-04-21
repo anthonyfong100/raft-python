@@ -43,6 +43,5 @@ class Candidate(Follower):
         logger.info(
             f"Received vote result of {msg.serialize()} new_vote_count:{self.vote_count}"
         )
-        # add one node for yourself
-        if self.vote_count > (len(self.cluster_nodes) + 1) / 2:
+        if self.vote_count > len(self.cluster_nodes) / 2:
             self.raft_node.change_state(Leader)

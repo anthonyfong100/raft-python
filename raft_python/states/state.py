@@ -29,7 +29,8 @@ class State(ABC):
             self.term_number = 0
             self.leader_id = BROADCAST_ALL_ADDR
             self.log = []
-            self.cluster_nodes: List[str] = self.raft_node.others
+            self.cluster_nodes: List[str] = self.raft_node.others + \
+                [self.raft_node.id]
 
         self.last_hearbeat = time.time()
         self.node_raft_command = None
@@ -42,7 +43,8 @@ class State(ABC):
             Messages.PutMessageRequest: self.on_client_put,
             Messages.RequestVote: self.on_internal_recv_request_vote,
             Messages.RequestVoteResponse: self.on_internal_recv_request_vote_response,
-            Messages.AppendEntriesReq: self.on_internal_recv_append_entries}
+            Messages.AppendEntriesReq: self.on_internal_recv_append_entries,
+            Messages.AppendEntriesResponse: self.on_internal_recv_append_entries_response}
         call_method: Callable = method_mapping.get(type(msg), None)
         if call_method:
             return call_method(msg)
@@ -100,4 +102,8 @@ class State(ABC):
 
     @abstractmethod
     def on_internal_recv_append_entries(self, msg: Messages.AppendEntriesReq):
+        pass
+
+    @abstractmethod
+    def on_internal_recv_append_entries_response(self, msg: Messages.AppendEntriesResponse):
         pass

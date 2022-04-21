@@ -127,3 +127,7 @@ class Follower(State):
             leader=self.leader_id,
         )
         self.raft_node.send(resp)
+
+    def on_internal_recv_append_entries_response(self, msg: Messages.AppendEntriesResponse):
+        logger.critical(
+            "Followers and candidates should never receive append entries response")

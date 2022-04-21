@@ -1,3 +1,4 @@
+import statistics
 import time
 import logging
 import raft_python.messages as Messages
@@ -19,12 +20,15 @@ class Leader(State):
 
         self.match_index = {node: 0 for node in self.cluster_nodes}
         self.next_index = {node: 0 for node in self.cluster_nodes}
-        self.commit_index = 0
+        self.commit_index = -1  # store the last index of command executed in log
         self.send_heartbeat()
 
     # TODO: Modfiy this to call in a loop
     def append_entries(self, is_heartbeat=False):
         for peer in self.cluster_nodes:
+            # dont send to yourself
+            if peer == self.raft_node.id:
+                continue
             prev_log_index: int = self.next_index[peer]
             prev_log_term: int = self.log[prev_log_index].term_number if len(
                 self.log) > prev_log_index else 0
@@ -78,4 +82,25 @@ class Leader(State):
         pass
 
     def on_internal_recv_append_entries(self, msg: Messages.AppendEntriesReq):
+        logger.critical("Leader should never receive append entries call")
         pass
+
+    def on_internal_recv_append_entries_response(self, msg: Messages.AppendEntriesResponse):
+        """
+        Upon receiving confirmation from other raft nodes
+        """
+        if msg.success:
+            self.match_index[msg.src] = msg.match_index
+            self.next_index[msg.src] = msg.match_index + 1
+            self.match_index[self.raft_node.id] = len(self.log)
+            self.next_index[self.raft_node.id] = len(self.log) + 1
+            index = statistics.median_low(self.matchIndex.values())
+
+            for ix_commit in range(self.commit_index + 1, index + 1):
+                self.raft_node.execute(self.log[ix_commit])
+
+            # TODO: send client resposne after successful so they can update their log
+            # self.send_client_append_response()
+        else:
+            # decremeent the next index for that receiver
+            self.nextIndex[msg.src] = max(0, self.nextIndex[msg.src] - 1)
