@@ -9,7 +9,7 @@ logger = logging.getLogger(LOGGER_NAME)
 class Leader(State):
     def __init__(self, old_state: "Candidate" = None, raft_node: "RaftNode" = None):
         super().__init__(old_state, raft_node)
-        logging.critical(f"Leader with Term:{self.term_number}")
+        logger.critical(f"Leader with Term:{self.term_number}")
         self.leader_id = self.raft_node.id
         self.node_raft_command = self.send_heartbeat
         self.execution_time = self.last_hearbeat + HEARTBEAT_INTERNVAL

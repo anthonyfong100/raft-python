@@ -47,7 +47,7 @@ class RaftNode:
         self.state = state
 
     def change_state(self, new_state: "ALL_NODE_STATES"):
-        logging.info(
+        logger.info(
             f"State changed from {type(self.state)} to {type(new_state)}")
         new_created_state: "ALL_NODE_STATES" = new_state(self.state, self)
         self.state = new_created_state
