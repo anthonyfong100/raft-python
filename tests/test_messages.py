@@ -31,21 +31,21 @@ class TestMessageTypes(unittest.TestCase):
 
     def test_serialization_get_ok(self):
         get_req_ok = messages.GetMessageResponseOk(
-            "src", "dst", "MID", "val", "leader")
+            "src", "dst", "MID", "value", "leader")
         expected_payload: dict = {
             "src": "src",
             "dst": "dst",
             "MID": "MID",
             "type": "ok",
             "leader": "leader",
-            "val": "val"
+            "value": "value"
         }
         self.assertDictEqual(get_req_ok.serialize(), expected_payload,
                              "Get ok response serialization should be identical")
 
     def test_serialization_put(self):
         put_req = messages.PutMessageRequest(
-            "src", "dst", "MID", "key", "val", "leader")
+            "src", "dst", "MID", "key", "value", "leader")
         expected_payload: dict = {
             "src": "src",
             "dst": "dst",
@@ -53,7 +53,7 @@ class TestMessageTypes(unittest.TestCase):
             "type": "put",
             "leader": "leader",
             "key": "key",
-            "val": "val",
+            "value": "value",
         }
         self.assertDictEqual(put_req.serialize(), expected_payload,
                              "Put response serialization should be identical")

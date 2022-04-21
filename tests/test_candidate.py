@@ -39,7 +39,7 @@ class TestCandidate(unittest.TestCase):
                          "Should vote for iteself")
         self.raft_node_mock.send.assert_has_calls(vote_reqs, any_order=True)
         self.assertEqual(self.raft_node_mock.send.call_count,
-                         len(self.candidate_state.cluster_nodes))
+                         len(self.raft_node_mock.others))
 
     def test_on_internal_recv_request_vote_response_success(self):
         """

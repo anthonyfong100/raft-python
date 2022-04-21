@@ -23,7 +23,7 @@ class TestFollower(unittest.TestCase):
     def test_on_client_put(self):
         """ Should return redirect and specify leader field if present"""
         incoming_put_req: Messages.PutMessageRequest = Messages.PutMessageRequest(
-            "src", self.raft_node_mock.id, "MID", "key", "val", BROADCAST_ALL_ADDR
+            "src", self.raft_node_mock.id, "MID", "key", "value", BROADCAST_ALL_ADDR
         )
         redirect_message: Messages.MessageRedirect = Messages.MessageRedirect(
             self.raft_node_mock.id, "src", "MID", BROADCAST_ALL_ADDR)
@@ -33,7 +33,7 @@ class TestFollower(unittest.TestCase):
     def test_on_client_get(self):
         """ Should return redirect and specify leader field if present"""
         incoming_put_req: Messages.PutMessageRequest = Messages.PutMessageRequest(
-            "src", self.raft_node_mock.id, "MID", "key", "val", BROADCAST_ALL_ADDR
+            "src", self.raft_node_mock.id, "MID", "key", "value", BROADCAST_ALL_ADDR
         )
         redirect_message: Messages.MessageRedirect = Messages.MessageRedirect(
             self.raft_node_mock.id, "src", "MID", BROADCAST_ALL_ADDR)
@@ -127,8 +127,23 @@ class TestFollower(unittest.TestCase):
         self.follower_state.receive_internal_message(incoming_vote_req)
         self.raft_node_mock.send.assert_called_once_with(outgoing_message)
 
-    def test_on_internal_recv_request_vote_response(self):
-        pass
+    def _is_valid_append_entries_req_invalid_term_number(self):
+        self.follower_state.term_number = 1
+        incoming_vote_req: Messages.AppendEntriesReq = Messages.AppendEntriesReq(
+            "voter_src",
+            self.raft_node_mock.id,
+            0,
+            "leader_id",
+            10,
+            3,
+            [],
+            3,
+            "leader"
+        )
+        self.assertFalse(
+            self.follower_state._is_valid_append_entries_req(incoming_vote_req))
+
+    # TODO: add in more test for is valid append entries
 
 
 if __name__ == '__main__':
