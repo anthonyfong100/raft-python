@@ -201,17 +201,29 @@ def get_message_from_payload(payload: dict) -> Union[GetMessageRequest, PutMessa
             payload["vote_granted"],
             payload["leader"]
         )
+    elif payload.get("type", None) == MessageTypes.APPEND_ENTRIES.value:
+        return AppendEntriesReq(
+            payload["src"],
+            payload["dst"],
+            int(payload["term_number"]),
+            payload["leader_id"],
+            payload["prev_log_index"],
+            payload["prev_log_term_number"],
+            payload["entries"],
+            payload["leader_commit_index"],
+            payload["leader"],
+        )
     raise ValueError(
         f"Received payload is of unknown type\n Payload:{payload}")
 
 
-InternalMessageType = Union[RequestVote, RequestVoteResponse]
+InternalMessageType = Union[RequestVote, RequestVoteResponse, AppendEntriesReq]
 ClientMessageType = Union[GetMessageRequest, PutMessageRequest]
 IncomingMessageType = Union[InternalMessageType, ClientMessageType]
 
 
 def is_internal_message(msg: IncomingMessageType):
-    return type(msg) == RequestVote or type(msg) == RequestVoteResponse
+    return type(msg) == RequestVote or type(msg) == RequestVoteResponse or type(msg) == AppendEntriesReq
 
 
 def is_client_message(msg: IncomingMessageType):
