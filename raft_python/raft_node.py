@@ -54,7 +54,7 @@ class RaftNode:
 
     # KV Store execute wrapper
     def execute(self, command: ALL_COMMANDS):
-        self.executor.execute(command)
+        return self.executor.execute(command)
 
     # TODO: Wire up all the methods calls to state & add heartbeat mechanism
     def run(self):
@@ -67,8 +67,6 @@ class RaftNode:
                     if self.state.args is not None:
                         self.state.node_raft_command(self.state.args)
                     else:
-                        print(self.state.node_raft_command,
-                              self.state.args, type(self.state))
                         self.state.node_raft_command()
 
             # make socket connection non-blocking

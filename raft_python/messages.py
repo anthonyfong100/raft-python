@@ -66,11 +66,11 @@ class PutMessageRequest(BaseMessage):
                  dst: str,
                  MID: str,
                  key: str,
-                 val: str,
+                 value: str,
                  leader: str = BROADCAST_ALL_ADDR):
         super().__init__(src, dst, MessageTypes.PUT, leader)
         self.key = key
-        self.val = val
+        self.value = value
         self.MID = MID
 
 
@@ -80,11 +80,11 @@ class GetMessageResponseOk(BaseMessage):
                  src: str,
                  dst: str,
                  MID: str,
-                 val: str,
+                 value: str,
                  leader: str = BROADCAST_ALL_ADDR):
         super().__init__(
             src, dst, MessageTypes.OK, leader)
-        self.val = val
+        self.value = value
         self.MID = MID
 
 

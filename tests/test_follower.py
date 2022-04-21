@@ -23,7 +23,7 @@ class TestFollower(unittest.TestCase):
     def test_on_client_put(self):
         """ Should return redirect and specify leader field if present"""
         incoming_put_req: Messages.PutMessageRequest = Messages.PutMessageRequest(
-            "src", self.raft_node_mock.id, "MID", "key", "val", BROADCAST_ALL_ADDR
+            "src", self.raft_node_mock.id, "MID", "key", "value", BROADCAST_ALL_ADDR
         )
         redirect_message: Messages.MessageRedirect = Messages.MessageRedirect(
             self.raft_node_mock.id, "src", "MID", BROADCAST_ALL_ADDR)
@@ -33,7 +33,7 @@ class TestFollower(unittest.TestCase):
     def test_on_client_get(self):
         """ Should return redirect and specify leader field if present"""
         incoming_put_req: Messages.PutMessageRequest = Messages.PutMessageRequest(
-            "src", self.raft_node_mock.id, "MID", "key", "val", BROADCAST_ALL_ADDR
+            "src", self.raft_node_mock.id, "MID", "key", "value", BROADCAST_ALL_ADDR
         )
         redirect_message: Messages.MessageRedirect = Messages.MessageRedirect(
             self.raft_node_mock.id, "src", "MID", BROADCAST_ALL_ADDR)
