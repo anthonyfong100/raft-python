@@ -99,7 +99,3 @@ class State(ABC):
     @abstractmethod
     def on_internal_recv_request_vote_response(self, msg: Messages.RequestVoteResponse):
         pass
-
-    @abstractmethod
-    def destroy(self):
-        pass

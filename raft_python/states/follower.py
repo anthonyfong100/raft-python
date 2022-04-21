@@ -19,10 +19,6 @@ class Follower(State):
         self.execution_time = self.last_hearbeat + self.election_timer
         self.args = (Candidate)
 
-    def destroy(self):
-        self.node_raft_command = None
-        self.args = None
-
     def randomly_generate_election_timer(self, timer_range=MAX_DURATION_NO_HEARTBEAT):
         """Generate a random election timer within range"""
         election_timer_ms: int = random.randint(

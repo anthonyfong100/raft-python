@@ -18,10 +18,6 @@ class Candidate(Follower):
         self.execution_time = self.last_hearbeat + self.election_timer
         self.args = None
 
-    # overwrite follower destroy method
-    def destroy(self):
-        return
-
     def run_elections(self):
         logger.info("Running for elections")
         self.term_number += 1
