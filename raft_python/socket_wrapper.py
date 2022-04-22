@@ -26,3 +26,6 @@ class SocketWrapper:
         data, _ = self.socket.recvfrom(buff_size)
         msg = json.loads(data.decode('utf-8'))
         return msg
+
+    def close(self):
+        self.socket.close()
