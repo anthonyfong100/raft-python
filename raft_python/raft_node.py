@@ -37,7 +37,7 @@ class RaftNode:
         hello_msg: HelloMessage = HelloMessage(
             self.id, BROADCAST_ALL_ADDR, BROADCAST_ALL_ADDR)
         logger.info("Replica %s starting up" % self.id)
-        self.socket.send(hello_msg.serialize())
+        self.send(hello_msg)
 
     def send(self, message: IncomingMessageType):
         """Wrapper to call internal socket Manager to send message"""
