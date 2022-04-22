@@ -16,9 +16,9 @@ class Candidate(Follower):
         self.election_timer = self.randomly_generate_election_timer()
         self.run_elections()
 
-        self.node_raft_command = None
+        self.node_raft_command = self.raft_node.change_state
         self.execution_time = self.last_hearbeat + self.election_timer
-        self.args = None
+        self.args = (Candidate)
 
     def run_elections(self):
         logger.info("Running for elections")
@@ -45,3 +45,7 @@ class Candidate(Follower):
         )
         if self.vote_count > len(self.cluster_nodes) / 2:
             self.raft_node.change_state(Leader)
+
+    def on_internal_recv_append_entries(self, msg: Messages.AppendEntriesReq):
+        self.raft_node.change_state(Follower)
+        self.raft_node.state.on_internal_recv_append_entries(msg)
