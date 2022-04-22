@@ -3,15 +3,13 @@ import select
 import socket
 import time
 import threading
-from typing import Deque, Dict, List
+from typing import Dict, List
 from raft_python.configs import BUFFER_SIZE
 from raft_python.raft_node import RaftNode
 from raft_python.states.follower import Follower
-from collections import deque
 from raft_python.raft_node import RaftNode
 from raft_python.socket_wrapper import SocketWrapper
 from raft_python.kv_cache import KVCache
-from unittest.mock import Mock
 
 
 def wait_and_run(func, wait_timeout=3, run_timeout=30):
@@ -69,7 +67,10 @@ class Simulator:
             for socket in sockets:
                 data, _ = socket.recvfrom(BUFFER_SIZE)
                 msg = json.loads(data.decode('utf-8'))
-                print(msg)
+                forward_socket: "socket" = self.simulator_socket[msg["dst"]]
+                dst_port = self.node_socket[msg["dst"]].socket.getsockname()[1]
+                forward_socket.sendto(json.dumps(msg).encode(
+                    'utf-8'), ('localhost', dst_port))
 
     def run(self, wait_timeout=3, run_timeout=30):
         threads = []
