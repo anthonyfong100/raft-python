@@ -61,7 +61,6 @@ class Follower(State):
         is_valid_last_log_term_number: bool = (msg.last_log_term_number > last_log_term_number_follower) or \
             (msg.last_log_term_number == last_log_term_number_follower and
              msg.last_log_index >= len(self.log))
-
         return is_valid_msg_term_number and is_valid_candidate and is_valid_last_log_term_number
 
     def on_internal_recv_request_vote(self, msg: Messages.RequestVote):
@@ -69,7 +68,6 @@ class Follower(State):
         should_accept_vote: bool = self._should_accept_vote(msg)
         if should_accept_vote:
             self.voted_for = msg.candidate_id
-            self.node_raft_command = self.raft_node.change_state
             self._reset_timeout()
             # https://courses.grainger.illinois.edu/ece428/sp2020//assets/slides/lect17.pdf
             self.term_number = msg.term_number
