@@ -17,8 +17,7 @@ class SocketWrapper:
         _socket.bind(('localhost', 0))
         return _socket
 
-    def send(self, message: IncomingMessageType):
-        message_serialized = message.serialize()
+    def send(self, message_serialized: dict):
         logger.debug(f"Sending Message:{message_serialized}\n")
         self.socket.sendto(json.dumps(message_serialized).encode(
             'utf-8'), ('localhost', self.port))
@@ -27,3 +26,6 @@ class SocketWrapper:
         data, _ = self.socket.recvfrom(buff_size)
         msg = json.loads(data.decode('utf-8'))
         return msg
+
+    def close(self):
+        self.socket.close()

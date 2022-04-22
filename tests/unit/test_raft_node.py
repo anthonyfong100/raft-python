@@ -17,7 +17,7 @@ class TestRaftNode(unittest.TestCase):
     def test_send_hello(self):
         self.raft_node.send_hello()
         socket_send_args = HelloMessage(
-            self.raft_node.id, BROADCAST_ALL_ADDR, BROADCAST_ALL_ADDR)
+            self.raft_node.id, BROADCAST_ALL_ADDR, BROADCAST_ALL_ADDR).serialize()
         self.socket_mock.send.assert_called_with(socket_send_args)
 
 

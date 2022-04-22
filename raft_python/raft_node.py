@@ -1,4 +1,5 @@
 import select
+from sqlite3 import Time
 import time
 import logging
 from enum import Enum
@@ -36,11 +37,11 @@ class RaftNode:
         hello_msg: HelloMessage = HelloMessage(
             self.id, BROADCAST_ALL_ADDR, BROADCAST_ALL_ADDR)
         logger.info("Replica %s starting up" % self.id)
-        self.socket.send(hello_msg)
+        self.send(hello_msg)
 
     def send(self, message: IncomingMessageType):
         """Wrapper to call internal socket Manager to send message"""
-        self.socket.send(message)
+        self.socket.send(message.serialize())
 
     # State wrapper functions
     def register_state(self, state: "ALL_NODE_STATES"):
@@ -52,9 +53,15 @@ class RaftNode:
         new_created_state: "ALL_NODE_STATES" = new_state(self.state, self)
         self.state = new_created_state
 
+    # KV Store execute wrapper
+    def execute(self, command: ALL_COMMANDS):
+        return self.executor.execute(command)
+
     # TODO: Wire up all the methods calls to state & add heartbeat mechanism
-    def run(self):
-        while True:
+    def run(self, timeout=None):
+        # used to simulate in integration tests
+        curr_time = time.time()
+        while timeout is None or time.time() < curr_time + timeout:
             # check if there are any looping messages
             if self.state.node_raft_command is not None:
                 # execute any commands
@@ -63,8 +70,6 @@ class RaftNode:
                     if self.state.args is not None:
                         self.state.node_raft_command(self.state.args)
                     else:
-                        print(self.state.node_raft_command,
-                              self.state.args, type(self.state))
                         self.state.node_raft_command()
 
             # make socket connection non-blocking

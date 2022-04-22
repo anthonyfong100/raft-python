@@ -35,7 +35,7 @@ class TestLeader(unittest.TestCase):
         self.raft_node_mock.send.assert_has_calls(
             append_entries_reqs, any_order=True)
         self.assertEqual(after_heartbeat_call_count - before_heartbeat_call_count,
-                         len(self.leader_state.cluster_nodes))
+                         len(self.raft_node_mock.others))
 
 
 if __name__ == '__main__':

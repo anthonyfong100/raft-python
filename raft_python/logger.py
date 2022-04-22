@@ -22,6 +22,6 @@ def set_up_logger(id: int):
     console_handler.setFormatter(formatter)
 
     # add the handlers to the logger
-    logger.addHandler(file_handler)
-    logger.addHandler(console_handler)
+    # logger.addHandler(file_handler)
+    # logger.addHandler(console_handler)
     return logger
