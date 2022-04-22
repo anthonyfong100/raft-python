@@ -42,6 +42,7 @@ class TestRunElection(unittest.TestCase):
         simulator = Simulator(2)
         simulator.initialize()
         simulator.run(wait_timeout=1, run_timeout=2)
+        simulator.teardown()
         num_leaders = len(list(filter(lambda raft_node: type(
             raft_node.state) == Leader, simulator.raft_node_mapping.values())))
         num_followers = len(list(filter(lambda raft_node: type(
@@ -51,7 +52,24 @@ class TestRunElection(unittest.TestCase):
         self.assertEqual(num_followers, 1)
         self.assertEqual(num_candidatess, 0)
         self.assertEqual(num_leaders, 1)
+
+    def test_run_election_one_leader_1_nodes(self):
+        """
+        Test that there should only be one leader during the election
+        """
+        simulator = Simulator(1)
+        simulator.initialize()
+        simulator.run(wait_timeout=1, run_timeout=2)
         simulator.teardown()
+        num_leaders = len(list(filter(lambda raft_node: type(
+            raft_node.state) == Leader, simulator.raft_node_mapping.values())))
+        num_followers = len(list(filter(lambda raft_node: type(
+            raft_node.state) == Follower, simulator.raft_node_mapping.values())))
+        num_candidatess = len(list(filter(lambda raft_node: type(
+            raft_node.state) == Candidate, simulator.raft_node_mapping.values())))
+        self.assertEqual(num_followers, 0)
+        self.assertEqual(num_candidatess, 0)
+        self.assertEqual(num_leaders, 1)
 
 
 if __name__ == '__main__':
