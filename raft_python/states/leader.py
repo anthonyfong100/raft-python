@@ -20,8 +20,8 @@ class Leader(State):
         self.execution_time = self.last_hearbeat + HEARTBEAT_INTERNVAL
         self.args = None
 
-        self.match_index = {node: 0 for node in self.cluster_nodes}
-        self.next_index = {node: 0 for node in self.cluster_nodes}
+        self.match_index = {node: -1 for node in self.cluster_nodes}
+        self.next_index = {node: -1 for node in self.cluster_nodes}
         self.commit_index = -1  # store the last index of command executed in log
         self.send_heartbeat()
 
@@ -33,7 +33,7 @@ class Leader(State):
                 continue
             prev_log_index: int = self.next_index[peer]
             prev_log_term: int = self.log[prev_log_index].term_number if len(
-                self.log) > prev_log_index else 0
+                self.log) > prev_log_index and prev_log_index != -1 else 0
             msg: Messages.AppendEntriesReq = Messages.AppendEntriesReq(
                 src=self.raft_node.id,
                 dst=peer,

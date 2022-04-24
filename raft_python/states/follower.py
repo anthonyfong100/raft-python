@@ -91,9 +91,11 @@ class Follower(State):
         Check if term number at prev log index == msg prev log term number
         """
         term_number_is_valid: bool = msg.term_number >= msg.term_number
-        if len(self.log) > msg.prev_log_index and self.log[msg.prev_log_index].term_number != msg.prev_log_term_number:
-            return False
-        return term_number_is_valid
+        log_ok = len(self.log) > msg.prev_log_index
+        if log_ok and msg.prev_log_index >= 0:
+            # compare the last term
+            log_ok = self.log[msg.prev_log_index].term_number == msg.prev_log_term_number
+        return term_number_is_valid and log_ok
 
     # TODO check if need to update term number here
     def on_internal_recv_append_entries(self, msg: Messages.AppendEntriesReq):

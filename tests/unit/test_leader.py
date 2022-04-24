@@ -24,11 +24,11 @@ class TestLeader(unittest.TestCase):
         before_heartbeat_call_count = self.raft_node_mock.send.call_count
         append_entries_reqs: List[Messages.AppendEntriesReq] = [
             call(Messages.AppendEntriesReq(self.raft_node_mock.id, "0", self.leader_state.term_number,
-                 self.raft_node_mock.id, 0, 0, [], self.leader_state.commit_index, self.raft_node_mock.id,)),
+                 self.raft_node_mock.id, -1, 0, [], self.leader_state.commit_index, self.raft_node_mock.id,)),
             call(Messages.AppendEntriesReq(self.raft_node_mock.id, "2", self.leader_state.term_number,
-                 self.raft_node_mock.id, 0, 0, [], self.leader_state.commit_index, self.raft_node_mock.id,)),
+                 self.raft_node_mock.id, -1, 0, [], self.leader_state.commit_index, self.raft_node_mock.id,)),
             call(Messages.AppendEntriesReq(self.raft_node_mock.id, "3", self.leader_state.term_number,
-                 self.raft_node_mock.id, 0, 0, [], self.leader_state.commit_index, self.raft_node_mock.id,))
+                 self.raft_node_mock.id, -1, 0, [], self.leader_state.commit_index, self.raft_node_mock.id,))
         ]
         self.leader_state.send_heartbeat()
         after_heartbeat_call_count = self.raft_node_mock.send.call_count
