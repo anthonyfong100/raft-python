@@ -13,7 +13,7 @@ from raft_python.states.leader import Leader
 class TestCandidate(unittest.TestCase):
     def setUp(self):
         self.raft_node_mock = Mock(RaftNode)
-        self.raft_node_mock.id = 1
+        self.raft_node_mock.id = "1"
         self.raft_node_mock.others = ["0", "2", "3"]
         self.follower_state = Follower(raft_node=self.raft_node_mock)
         self.candidate_state = Candidate(self.follower_state)
@@ -26,6 +26,8 @@ class TestCandidate(unittest.TestCase):
         vote_reqs: List[Messages.RequestVote] = [
             call(Messages.RequestVote(self.raft_node_mock.id, "0", self.candidate_state.term_number, self.raft_node_mock.id,
                                       last_log_index, last_log_term, self.candidate_state.leader_id)),
+            call(Messages.RequestVote(self.raft_node_mock.id, self.raft_node_mock.id, self.candidate_state.term_number, self.raft_node_mock.id,
+                                      last_log_index, last_log_term, self.candidate_state.leader_id)),
             call(Messages.RequestVote(self.raft_node_mock.id, "2", self.candidate_state.term_number, self.raft_node_mock.id,
                                       last_log_index, last_log_term, self.candidate_state.leader_id)),
             call(Messages.RequestVote(self.raft_node_mock.id, "3", self.candidate_state.term_number, self.raft_node_mock.id,
@@ -35,11 +37,11 @@ class TestCandidate(unittest.TestCase):
                          "Should increment term number when running elections")
         self.assertEqual(self.candidate_state.voted_for, self.raft_node_mock.id,
                          "voted_for should be its own raft_node id")
-        self.assertEqual(self.candidate_state.vote_count, 1,
+        self.assertEqual(self.candidate_state.vote_count, 0,
                          "Should vote for iteself")
         self.raft_node_mock.send.assert_has_calls(vote_reqs, any_order=True)
         self.assertEqual(self.raft_node_mock.send.call_count,
-                         len(self.raft_node_mock.others))
+                         len(self.raft_node_mock.others) + 1)  # send a vote to oneself
 
     def test_on_internal_recv_request_vote_response_success(self):
         """
@@ -50,9 +52,12 @@ class TestCandidate(unittest.TestCase):
             "raft_node1", self.raft_node_mock.id, 9, True, self.candidate_state.leader_id
         )
 
+        print(self.candidate_state.vote_count)
+        self.candidate_state.receive_internal_message(incoming_vote_resp)
+        self.assertEqual(self.candidate_state.vote_count, 1)
+        self.raft_node_mock.change_state.assert_not_called()
         self.candidate_state.receive_internal_message(incoming_vote_resp)
         self.assertEqual(self.candidate_state.vote_count, 2)
-        self.raft_node_mock.change_state.assert_not_called()
         self.candidate_state.receive_internal_message(incoming_vote_resp)
         self.assertEqual(self.candidate_state.vote_count, 3)
         self.raft_node_mock.change_state.assert_called_once_with(Leader)

@@ -57,6 +57,7 @@ class State(ABC):
         from raft_python.states.follower import Follower
         logger.debug(f'Received {msg.serialize()}')
 
+        # TODO: Move this logic of setting term number out to the individual calls
         if self.term_number < msg.term_number:
             # update term number to be the maximum
             self.term_number = msg.term_number
