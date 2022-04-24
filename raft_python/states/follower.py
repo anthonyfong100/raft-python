@@ -109,7 +109,7 @@ class Follower(State):
             self.leader_id = msg.leader_id
             logger.info(f"leader is now set to {msg.leader_id}")
             for entry in msg.entries:
-                self.log.append(deserialize_command(entry))
+                self.log.append(entry)
 
             # TODO add in commiting of messages
         else:

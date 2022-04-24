@@ -1,11 +1,10 @@
-import statistics
 import time
 import logging
-from typing import Optional
 import raft_python.messages as Messages
+from typing import List, Optional
 from raft_python.configs import LOGGER_NAME, HEARTBEAT_INTERNVAL
 from raft_python.states.state import State
-from raft_python.commands import SetCommand, GetCommand
+from raft_python.commands import ALL_COMMANDS, SetCommand, GetCommand
 logger = logging.getLogger(LOGGER_NAME)
 
 
@@ -34,6 +33,14 @@ class Leader(State):
             prev_log_index: int = self.next_index[peer]
             prev_log_term: int = self.log[prev_log_index].term_number if len(
                 self.log) > prev_log_index and prev_log_index != -1 else 0
+            entries: List[ALL_COMMANDS]
+            if is_heartbeat:
+                entries = []
+            elif prev_log_index == -1:
+                entries = self.log
+            else:
+                entries = self.log[prev_log_index:]
+
             msg: Messages.AppendEntriesReq = Messages.AppendEntriesReq(
                 src=self.raft_node.id,
                 dst=peer,
@@ -41,7 +48,7 @@ class Leader(State):
                 leader_id=self.raft_node.id,
                 prev_log_index=prev_log_index,
                 prev_log_term_number=prev_log_term,
-                entries=[] if is_heartbeat else [],  # TODO: fix this []
+                entries=entries,
                 leader_commit_index=self.commit_index,
                 leader=self.raft_node.id,
             )

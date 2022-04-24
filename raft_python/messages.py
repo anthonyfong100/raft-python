@@ -1,6 +1,6 @@
 from typing import Union, List
 from raft_python.configs import BROADCAST_ALL_ADDR
-from raft_python.commands import ALL_COMMANDS
+from raft_python.commands import ALL_COMMANDS, deserialize_command
 from enum import Enum
 
 
@@ -167,6 +167,11 @@ class AppendEntriesReq(BaseMessage):
         self.entries = entries
         self.leader_commit_index = leader_commit_index
 
+    def serialize(self):
+        dict = super().serialize()
+        dict["entries"] = [entry.serialize() for entry in dict["entries"]]
+        return dict
+
 
 class AppendEntriesResponse(BaseMessage):
     def __init__(self,
@@ -217,6 +222,9 @@ def get_message_from_payload(payload: dict) -> Union[GetMessageRequest, PutMessa
             payload["leader"]
         )
     elif payload.get("type", None) == MessageTypes.APPEND_ENTRIES.value:
+        entries = [deserialize_command(serialized_entry)
+                   for serialized_entry in payload["entries"]]
+
         return AppendEntriesReq(
             payload["src"],
             payload["dst"],
@@ -224,7 +232,7 @@ def get_message_from_payload(payload: dict) -> Union[GetMessageRequest, PutMessa
             payload["leader_id"],
             payload["prev_log_index"],
             payload["prev_log_term_number"],
-            payload["entries"],
+            entries,
             payload["leader_commit_index"],
             payload["leader"],
         )
