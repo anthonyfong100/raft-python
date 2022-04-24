@@ -92,7 +92,7 @@ class Follower(State):
         """
         term_number_is_valid: bool = msg.term_number >= msg.term_number
         log_ok = len(self.log) > msg.prev_log_index
-        if log_ok and msg.prev_log_index >= 0:
+        if log_ok and msg.prev_log_index >= 0:  # when just initialize prev_log_index = -1
             # compare the last term
             log_ok = self.log[msg.prev_log_index].term_number == msg.prev_log_term_number
         return term_number_is_valid and log_ok
