@@ -57,24 +57,26 @@ class RaftNode:
     def execute(self, command: ALL_COMMANDS):
         return self.executor.execute(command)
 
-    # TODO: Wire up all the methods calls to state & add heartbeat mechanism
+    def _run_single_step(self, timeout):
+        # check if there are any looping messages
+        if self.state.node_raft_command is not None:
+            # execute any commands
+            if time.time() > self.state.execution_time:
+                # execute here
+                if self.state.args is not None:
+                    self.state.node_raft_command(self.state.args)
+                else:
+                    self.state.node_raft_command()
+
+        # make socket connection non-blocking
+        socket = select.select([self.socket.socket], [], [], 0.1)[0]
+        for _ in socket:
+            msg = self.socket.receive()
+            req: IncomingMessageType = get_message_from_payload(msg)
+            self.state.receive_message(req)
+
     def run(self, timeout=None):
         # used to simulate in integration tests
         curr_time = time.time()
         while timeout is None or time.time() < curr_time + timeout:
-            # check if there are any looping messages
-            if self.state.node_raft_command is not None:
-                # execute any commands
-                if time.time() > self.state.execution_time:
-                    # execute here
-                    if self.state.args is not None:
-                        self.state.node_raft_command(self.state.args)
-                    else:
-                        self.state.node_raft_command()
-
-            # make socket connection non-blocking
-            socket = select.select([self.socket.socket], [], [], 0.1)[0]
-            for _ in socket:
-                msg = self.socket.receive()
-                req: IncomingMessageType = get_message_from_payload(msg)
-                self.state.receive_message(req)
+            self._run_single_step(timeout)

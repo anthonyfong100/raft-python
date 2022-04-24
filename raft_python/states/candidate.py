@@ -13,6 +13,7 @@ class Candidate(Follower):
     def __init__(self, old_state: Follower = None, raft_node: "RaftNode" = None):
         super().__init__(old_state, raft_node)
         self.voted_for = None
+        self.vote_count = 0
         self.election_timer = self.randomly_generate_election_timer()
         self.run_elections()
 
@@ -23,11 +24,10 @@ class Candidate(Follower):
     def run_elections(self):
         logger.info("Running for elections")
         self.term_number += 1
-        self.vote_count = 1
         self.voted_for = self.raft_node.id
         last_log_index: int = len(self.log)
         last_log_term_number: int = self.log[-1].term_number if self.log else 0
-        for other_node_id in self.raft_node.others:
+        for other_node_id in self.cluster_nodes:
             request_vote: RequestVote = RequestVote(
                 self.raft_node.id,
                 other_node_id,

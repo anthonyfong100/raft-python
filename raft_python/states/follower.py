@@ -111,7 +111,7 @@ class Follower(State):
 
             # TODO add in commiting of messages
         else:
-            prev_log_term_number = self.log[msg.prev_log_index].term if len(
+            prev_log_term_number = self.log[msg.prev_log_index].term_number if len(
                 self.log) > msg.prev_log_index else None
             logger.warning(f"Append entries failed to append, append entries msg:{msg},\
                 current term: {self.term_number} log length {len(self.log)} prev_log_term_number {prev_log_term_number} ")
