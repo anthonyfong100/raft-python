@@ -60,7 +60,7 @@ file_handler.setLevel(logging.INFO)
 
 # create formatter and add it to the handlers
 formatter = logging.Formatter(
-    f'%(asctime)s - %(levelname)s - %(message)s', "%Y-%m-%d %H:%M:%S")
+    f'%(message)s')
 
 file_handler.setFormatter(formatter)
 console_handler.setFormatter(formatter)
@@ -280,24 +280,25 @@ class Stats:
             self.median_latency = self.latencies[len(self.latencies)//2]
 
     def dump(self):
-        print('Leaders:', ' '.join(self.leaders))
+        print(f'Leaders:{" ".join(self.leaders)}')
         print(f'Replicas that died/were killed: {self.died}/{self.killed}')
-        print('Total messages sent:', self.total_msgs)
-        print('Total messages dropped:', self.total_drops)
-        print('Total messages blocked by full sockets:', self.blocked)
+        print(f'Total messages sent:{self.total_msgs}')
+        print(f'Total messages dropped: {self.total_drops}')
+        print(
+            f'Total messages blocked by full sockets:{self.blocked}')
         print(
             f'Total client get()/put() requests: {self.total_get}/{self.total_put}')
-        print('Total duplicate responses:', self.duplicates)
+        print(f'Total duplicate responses:{self.duplicates}')
         print(
             f'Total unanswered get()/put() requests: {self.unanswered_get}/{self.unanswered_put}')
-        print('Total redirects:', self.redirects)
+        print(f'Total redirects:{self.redirects}')
         print(
             f'Total get()/put() failures: {self.failed_get}/{self.failed_put}')
-        print('Total get() with incorrect response:', self.incorrect)
+        print(f'Total get() with incorrect response:{self.incorrect}')
         print(f"unanswered_put : {self.unanswered_put_arr}")
         if len(self.latencies) > 0:
-            print('Mean/Median query latency: {}sec/{}sec'.format(float(sum(self.latencies))/len(self.latencies),
-                                                                  self.latencies[len(self.latencies)//2]))
+            print(f"Mean/Median query latency: {float(sum(self.latencies))/len(self.latencies)}sec"
+                  f"/{self.latencies[len(self.latencies)//2]}sec")
 
 
 #######################################################################################################
@@ -978,7 +979,6 @@ def single_test(testfile, silence=False):
     stats = sim.stats
 
     bold("\n# Simulation Finished\n\n## Useful Information and Statistics")
-    sim.conf.dump()
     sim.stats.dump()
 
     bold("\n## Correctness Checks")
