@@ -41,6 +41,8 @@ class BaseMessage:
 
 
 class HelloMessage(BaseMessage):
+    name = "HelloMessage"
+
     def __init__(self,
                  src: str,
                  dst: str,
@@ -49,6 +51,8 @@ class HelloMessage(BaseMessage):
 
 
 class GetMessageRequest(BaseMessage):
+    name = "GetMessageRequest"
+
     def __init__(self,
                  src: str,
                  dst: str,
@@ -61,6 +65,8 @@ class GetMessageRequest(BaseMessage):
 
 
 class PutMessageRequest(BaseMessage):
+    name = "PutMessageRequest"
+
     def __init__(self,
                  src: str,
                  dst: str,
@@ -76,6 +82,8 @@ class PutMessageRequest(BaseMessage):
 
 # Client Reponse message wrappers
 class GetMessageResponseOk(BaseMessage):
+    name = "GetMessageResponseOk"
+
     def __init__(self,
                  src: str,
                  dst: str,
@@ -89,6 +97,8 @@ class GetMessageResponseOk(BaseMessage):
 
 
 class PutMessageResponseOk(BaseMessage):
+    name = "PutMessageResponseOk"
+
     def __init__(self,
                  src: str,
                  dst: str,
@@ -100,6 +110,8 @@ class PutMessageResponseOk(BaseMessage):
 
 
 class MessageFail(BaseMessage):
+    name = "MessageFail"
+
     def __init__(self,
                  src: str,
                  dst: str,
@@ -110,6 +122,8 @@ class MessageFail(BaseMessage):
 
 
 class MessageRedirect(BaseMessage):
+    name = "MessageRedirect"
+
     def __init__(self,
                  src: str,
                  dst: str,
@@ -121,6 +135,8 @@ class MessageRedirect(BaseMessage):
 
 # Raft algorithm request wrappers
 class RequestVote(BaseMessage):
+    name = "RequestVote"
+
     def __init__(self,
                  src: str,
                  dst: str,
@@ -137,6 +153,8 @@ class RequestVote(BaseMessage):
 
 
 class RequestVoteResponse(BaseMessage):
+    name = "RequestVoteResponse"
+
     def __init__(self,
                  src: str,
                  dst: str,
@@ -149,6 +167,8 @@ class RequestVoteResponse(BaseMessage):
 
 
 class AppendEntriesReq(BaseMessage):
+    name = "AppendEntriesReq"
+
     def __init__(self,
                  src: str,
                  dst: str,
@@ -174,6 +194,8 @@ class AppendEntriesReq(BaseMessage):
 
 
 class AppendEntriesResponse(BaseMessage):
+    name = "AppendEntriesResponse"
+
     def __init__(self,
                  src: str,
                  dst: str,

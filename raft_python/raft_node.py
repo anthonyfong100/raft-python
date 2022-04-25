@@ -6,12 +6,11 @@ from enum import Enum
 from typing import List
 # from raft_python.states import ALL_NODE_STATES
 from raft_python.socket_wrapper import SocketWrapper
-from raft_python.configs import BROADCAST_ALL_ADDR, MAX_DURATION_NO_HEARTBEAT, LOGGER_NAME
-from raft_python.messages import GetMessageRequest,\
-    HelloMessage, MessageFail, PutMessageRequest, RequestVoteResponse,\
-    get_message_from_payload, IncomingMessageType, RequestVote
+from raft_python.configs import BROADCAST_ALL_ADDR, LOGGER_NAME
+from raft_python.messages import HelloMessage, get_message_from_payload, IncomingMessageType
 from raft_python.kv_cache import KVCache
 from raft_python.commands import ALL_COMMANDS
+from raft_python.stats_recorder import StatsRecorder
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -23,14 +22,14 @@ class NodeRole(Enum):
 
 
 class RaftNode:
-    def __init__(self, socket_wrapper: SocketWrapper, kv_cache: KVCache, id: str, others: List[str]):
+    def __init__(self, socket_wrapper: SocketWrapper, kv_cache: KVCache, id: str, others: List[str], stats_recorder: StatsRecorder):
         self.socket: SocketWrapper = socket_wrapper
         # TODO: refactor this to interact with executor interface
         self.executor: KVCache = kv_cache
         self.id: str = id
         self.others: List[str] = others
         self.state = None  # need to register state here
-
+        self.stats_recorder = stats_recorder
         logger.info("Starting Raft Node")
 
     def send_hello(self):
@@ -41,6 +40,7 @@ class RaftNode:
 
     def send(self, message: IncomingMessageType):
         """Wrapper to call internal socket Manager to send message"""
+        self.stats_recorder.inc_stat(message.name, 1)
         self.socket.send(message.serialize())
 
     # State wrapper functions
@@ -80,3 +80,5 @@ class RaftNode:
         curr_time = time.time()
         while timeout is None or time.time() < curr_time + timeout:
             self._run_single_step(timeout)
+            logger.info(
+                f"stats of messages sent:{self.stats_recorder.get_stats()}")
