@@ -1,4 +1,5 @@
 import unittest
+from raft_python.commands import SetCommand
 import raft_python.messages as messages
 
 
@@ -96,6 +97,32 @@ class TestMessageTypes(unittest.TestCase):
         }
         self.assertDictEqual(req_redirect.serialize(), expected_payload,
                              "redirect response serialization should be identical")
+
+    def test_serialization_append_entries(self):
+        req_append_entries = messages.AppendEntriesReq(
+            src="src",
+            dst="dst",
+            term_number=0,
+            leader_id="leader_id",
+            prev_log_index=0,
+            prev_log_term_number=0,
+            entries=[SetCommand(0, {"key": 1, "value": 2})],
+            leader_commit_index=0,
+            leader="leader")
+        expected_payload: dict = {
+            "src": "src",
+            "dst": "dst",
+            "term_number": 0,
+            "leader_id": "leader_id",
+            "prev_log_index": 0,
+            "prev_log_term_number": 0,
+            "entries": [{'term_number': 0, 'command_type': 'set', 'args': {'key': 1, 'value': 2}}],
+            "leader_commit_index": 0,
+            "leader": "leader",
+            "type": "append_entries",
+        }
+        self.assertDictEqual(req_append_entries.serialize(), expected_payload,
+                             "append entries  serialization should be identical")
 
 
 if __name__ == '__main__':

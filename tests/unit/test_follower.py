@@ -128,7 +128,7 @@ class TestFollower(unittest.TestCase):
         self.follower_state.receive_internal_message(incoming_vote_req)
         self.raft_node_mock.send.assert_called_once_with(outgoing_message)
 
-    def _is_valid_append_entries_req_invalid_term_number(self):
+    def test_is_valid_append_entries_req_invalid_term_number(self):
         self.follower_state.term_number = 1
         incoming_vote_req: Messages.AppendEntriesReq = Messages.AppendEntriesReq(
             "voter_src",
@@ -145,16 +145,82 @@ class TestFollower(unittest.TestCase):
             self.follower_state._is_valid_append_entries_req(incoming_vote_req))
 
     # TODO: add in more test for is valid append entries
+    def test_is_valid_append_entries_req_invalid_prev_log_index(self):
+        """
+        Check if is valid append entries
+        1. length of log in recv > prev log index
+        2. log entry term number at prev log index is the same is valid
+        """
+        invalid_incoming_vote_req: Messages.AppendEntriesReq = Messages.AppendEntriesReq(
+            src="voter_src",
+            dst=self.raft_node_mock.id,
+            term_number=1,
+            leader_id="leader_id",
+            prev_log_index=1,
+            prev_log_term_number=3,
+            entries=[],
+            leader_commit_index=3,
+            leader="leader"
+        )
+        self.assertFalse(
+            self.follower_state._is_valid_append_entries_req(invalid_incoming_vote_req))
 
+    def test_is_valid_append_entries_req_invalid_prev_log_term(self):
+        """
+        Check if is valid append entries
+        1. length of log in recv > prev log index
+        2. log entry term number at prev log index is the same is valid
+        """
+        self.follower_state.log.append(SetCommand(4, {}))
+        invalid_incoming_vote_req: Messages.AppendEntriesReq = Messages.AppendEntriesReq(
+            src="voter_src",
+            dst=self.raft_node_mock.id,
+            term_number=1,
+            leader_id="leader_id",
+            prev_log_index=0,
+            prev_log_term_number=3,
+            entries=[],
+            leader_commit_index=3,
+            leader="leader"
+        )
+        self.assertFalse(
+            self.follower_state._is_valid_append_entries_req(invalid_incoming_vote_req))
 
-# Integration test for follower
-class TestFollowerIntegration(unittest.TestCase):
-    def setUp(self):
-        self.raft_node_mock = Mock(RaftNode)
-        self.raft_node_mock.id = 0
-        self.raft_node_mock.others = ["1", "2", "3", "4"]
-        self.follower_state = Follower(raft_node=self.raft_node_mock)
-        self.raft_node_mock.state = self.follower_state
+    def test_on_internal_recv_append_entries(self):
+        """
+        Check if is valid append entries
+        1. length of log in recv > prev log index
+        2. log entry term number at prev log index is the same is valid
+        """
+        self.follower_state.log.append(SetCommand(3, {}))
+        valid_incoming_vote_req: Messages.AppendEntriesReq = Messages.AppendEntriesReq(
+            src="voter_src",
+            dst=self.raft_node_mock.id,
+            term_number=1,
+            leader_id="leader_id",
+            prev_log_index=0,
+            prev_log_term_number=3,
+            entries=[SetCommand(3, {}), SetCommand(
+                4, {"key", "a", "value", "b"})],
+            leader_commit_index=3,
+            leader="leader"
+        )
+        self.assertTrue(
+            self.follower_state._is_valid_append_entries_req(valid_incoming_vote_req))
+        self.follower_state.receive_internal_message(
+            valid_incoming_vote_req)
+        self.assertEqual(self.follower_state.log, [SetCommand(3, {}), SetCommand(
+            4, {"key", "a", "value", "b"})])
+
+        append_entry_resp: Messages.AppendEntriesResponse = Messages.AppendEntriesResponse(
+            src=self.follower_state.raft_node.id,
+            dst="voter_src",
+            term_number=1,
+            match_index=1,
+            success=True,
+            leader="leader_id",
+        )
+        self.raft_node_mock.send.assert_called_once_with(append_entry_resp)
 
 
 if __name__ == '__main__':
