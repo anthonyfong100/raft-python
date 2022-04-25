@@ -39,7 +39,8 @@ class RaftNode:
 
     def send(self, message: IncomingMessageType, tag: str = None):
         """Wrapper to call internal socket Manager to send message"""
-        logger.debug(f"sending msg : {message.serialize()}")
+        logger.debug(
+            f"sending msg : src {message.src} dst {message.dst} type {message.type} leader {message.leader}")
         stat_name = message.name
         if tag is not None:
             stat_name = f"{message.name}_{tag}"
@@ -89,4 +90,4 @@ class RaftNode:
             logger.debug(
                 f"stats of messages sent:{self.stats_recorder.get_stats()}")
             logger.info(
-                f"self state : {type(self.state)} term_number:{self.state.term_number} log length:{len(self.state.log)}")
+                f"self state : {type(self.state)} term_number:{self.state.term_number} log length:{len(self.state.log)} commit_ix:{self.state.commit_index} self.leader_id {self.state.leader_id}")

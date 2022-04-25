@@ -37,6 +37,7 @@ class Leader(State):
                 MID=client_req.MID,
                 leader=self.leader_id
             )
+            logger.warning(f"Sending message failure:{msg_failed.MID}")
             self.raft_node.send(msg_failed)
         return
 
@@ -86,7 +87,7 @@ class Leader(State):
 
     # TODO: Do this the right way by waiting for quorum
     def on_client_put(self, msg: Messages.PutMessageRequest):
-        logger.debug(f"Received put request: {msg.serialize()}")
+        logger.info(f"Received put request: {msg.serialize()}")
 
         # create a new command and put it in
         set_command: SetCommand = SetCommand(
@@ -110,7 +111,7 @@ class Leader(State):
 
     # TODO: Do this the right way by waiting for quorum
     def on_client_get(self, msg: Messages.GetMessageRequest):
-        logger.debug(f"Received get request: {msg.serialize()}")
+        logger.info(f"Received get request: {msg.serialize()}")
 
         # create a new command and put it in
         get_command: GetCommand = GetCommand(
@@ -138,7 +139,14 @@ class Leader(State):
 
     def on_internal_recv_append_entries(self, msg: Messages.AppendEntriesReq):
         logger.warning("Leader should never receive append entries call")
-        pass
+        logger.info(
+            f"receive append entry from :{msg.src} term_number:{msg.term_number} prev_log_index:{msg.prev_log_index}"
+            f"prev log term: {msg.prev_log_term_number}")
+        if msg.term_number > self.term_number:
+            # become a follower
+            self.term_number = msg.term_number
+            self.raft_node.change_state(Follower)
+            self.raft_node.state.receive_internal_message(msg)
 
     def on_internal_recv_append_entries_response(self, msg: Messages.AppendEntriesResponse):
         """
@@ -174,8 +182,9 @@ class Leader(State):
                                                 self.match_index[msg.src] - 1)
         elif msg.term_number > self.term_number:
             self.term_number = msg.term_number
+            self.leader_id = BROADCAST_ALL_ADDR
             self.raft_node.change_state(Follower)
-        logger.debug(
+        logger.info(
             f"leader log legnth:{len(self.log)} leader commit index:{self.commit_index}, match index:{self.match_index} ")
 
 

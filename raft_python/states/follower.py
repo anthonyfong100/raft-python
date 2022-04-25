@@ -3,7 +3,7 @@ import logging
 import random
 import raft_python.messages as Messages
 from raft_python.states.state import State
-from raft_python.configs import MAX_DURATION_NO_HEARTBEAT, LOGGER_NAME
+from raft_python.configs import BROADCAST_ALL_ADDR, MAX_DURATION_NO_HEARTBEAT, LOGGER_NAME
 logger = logging.getLogger(LOGGER_NAME)
 
 
@@ -13,6 +13,7 @@ class Follower(State):
     def __init__(self, old_state: State = None, raft_node: "RaftNode" = None):
         super().__init__(old_state, raft_node)
         self.voted_for = None
+        self.leader_id = BROADCAST_ALL_ADDR
         # TODO: fix prevent cyclic import dependency
         from raft_python.states.candidate import Candidate
         self.node_raft_command = self.raft_node.change_state
@@ -139,8 +140,10 @@ class Follower(State):
                 self.raft_node.execute(self.log[commit_ix])
             self.commit_index = max_commit_index
         else:
+            logger.info(
+                f"self.log:{len(self.log)} prev log index:{msg.prev_log_index}")
             prev_log_term_number = self.log[msg.prev_log_index].term_number if len(
-                self.log) > msg.prev_log_index else None
+                self.log) > msg.prev_log_index and len(self.log) != 0 else None
             logger.warning(f"Append entries failed to append, append entries msg term_number:{msg.term_number} "
                            f"msg prev_log_index:{msg.prev_log_index}, msg prev_log_term:{msg.prev_log_term_number} \n"
                            f"current term number: {self.term_number} log length: {len(self.log)} "

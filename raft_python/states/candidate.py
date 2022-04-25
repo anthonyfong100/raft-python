@@ -38,6 +38,8 @@ class Candidate(Follower):
                 last_log_term_number,
                 BROADCAST_ALL_ADDR)  # TODO: Check if should broadcast leader as unknown
             self.raft_node.send(request_vote)
+            logger.info(
+                f"send request for votes src:{request_vote.src} dst {request_vote.dst} {request_vote.term_number}")
         self._reset_timeout()
 
     def on_internal_recv_request_vote_response(self, msg: Messages.RequestVoteResponse):
