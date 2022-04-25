@@ -22,6 +22,8 @@ class TestLeader(unittest.TestCase):
         self.raft_node_mock.state = self.leader_state
 
     def test_heartbeat(self):
+        prev_heartbeat_time = self.leader_state.last_hearbeat
+        prev_execution_time = self.leader_state.last_hearbeat
         before_heartbeat_call_count = self.raft_node_mock.send.call_count
         append_entries_reqs: List[Messages.AppendEntriesReq] = [
             call(Messages.AppendEntriesReq(self.raft_node_mock.id, "0", self.leader_state.term_number,
@@ -37,6 +39,9 @@ class TestLeader(unittest.TestCase):
             append_entries_reqs, any_order=True)
         self.assertEqual(after_heartbeat_call_count - before_heartbeat_call_count,
                          len(self.raft_node_mock.others))
+        # test timer is reset
+        self.assertTrue(self.leader_state.last_hearbeat > prev_heartbeat_time)
+        self.assertTrue(self.leader_state.execution_time > prev_execution_time)
 
     def test_on_client_put(self):
         put_message1: Messages.PutMessageRequest = Messages.PutMessageRequest(
