@@ -200,7 +200,7 @@ class TestFollower(unittest.TestCase):
             leader_id="leader_id",
             prev_log_index=0,
             prev_log_term_number=3,
-            entries=[SetCommand(3, {}, MID="MID"), SetCommand(
+            entries=[SetCommand(
                 4, {"key", "a", "value", "b"}, MID="MID")],
             leader_commit_index=3,
             leader="leader"
