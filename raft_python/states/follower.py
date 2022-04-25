@@ -91,9 +91,11 @@ class Follower(State):
         Check if term number at prev log index == msg prev log term number
         """
         term_number_is_valid: bool = msg.term_number >= msg.term_number
-        if len(self.log) > msg.prev_log_index and self.log[msg.prev_log_index].term_number != msg.prev_log_term_number:
-            return False
-        return term_number_is_valid
+        log_ok = len(self.log) > msg.prev_log_index
+        if log_ok and msg.prev_log_index >= 0:  # when just initialize prev_log_index = -1
+            # compare the last term
+            log_ok = self.log[msg.prev_log_index].term_number == msg.prev_log_term_number
+        return term_number_is_valid and log_ok
 
     # TODO check if need to update term number here
     def on_internal_recv_append_entries(self, msg: Messages.AppendEntriesReq):
@@ -103,24 +105,25 @@ class Follower(State):
             self._reset_timeout()
         if is_success:
             # remove log terms from index onwards
-            self.log = self.log[:msg.prev_log_index]
+            self.log = self.log[:msg.prev_log_index + 1].copy()
             self.leader_id = msg.leader_id
             logger.info(f"leader is now set to {msg.leader_id}")
             for entry in msg.entries:
-                self.log.append(deserialize_command(entry))
-
+                self.log.append(entry)
             # TODO add in commiting of messages
         else:
             prev_log_term_number = self.log[msg.prev_log_index].term_number if len(
                 self.log) > msg.prev_log_index else None
-            logger.warning(f"Append entries failed to append, append entries msg:{msg},\
-                current term: {self.term_number} log length {len(self.log)} prev_log_term_number {prev_log_term_number} ")
+            logger.warning(f"Append entries failed to append, append entries msg term_number:{msg.term_number} "
+                           f"msg prev_log_index:{msg.prev_log_index}, msg prev_log_term:{msg.prev_log_term_number} \n"
+                           f"current term number: {self.term_number} log length: {len(self.log)} "
+                           f"prev_log_term_number: {prev_log_term_number}")
 
         resp: Messages.AppendEntriesResponse = Messages.AppendEntriesResponse(
             src=self.raft_node.id,
             dst=msg.src,
             term_number=self.term_number,
-            match_index=len(self.log),
+            match_index=len(self.log) - 1,
             success=is_success,
             leader=self.leader_id,
         )

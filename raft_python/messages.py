@@ -1,6 +1,6 @@
 from typing import Union, List
 from raft_python.configs import BROADCAST_ALL_ADDR
-from raft_python.commands import ALL_COMMANDS
+from raft_python.commands import ALL_COMMANDS, deserialize_command
 from enum import Enum
 
 
@@ -41,6 +41,8 @@ class BaseMessage:
 
 
 class HelloMessage(BaseMessage):
+    name = "HelloMessage"
+
     def __init__(self,
                  src: str,
                  dst: str,
@@ -49,6 +51,8 @@ class HelloMessage(BaseMessage):
 
 
 class GetMessageRequest(BaseMessage):
+    name = "GetMessageRequest"
+
     def __init__(self,
                  src: str,
                  dst: str,
@@ -61,6 +65,8 @@ class GetMessageRequest(BaseMessage):
 
 
 class PutMessageRequest(BaseMessage):
+    name = "PutMessageRequest"
+
     def __init__(self,
                  src: str,
                  dst: str,
@@ -76,6 +82,8 @@ class PutMessageRequest(BaseMessage):
 
 # Client Reponse message wrappers
 class GetMessageResponseOk(BaseMessage):
+    name = "GetMessageResponseOk"
+
     def __init__(self,
                  src: str,
                  dst: str,
@@ -89,6 +97,8 @@ class GetMessageResponseOk(BaseMessage):
 
 
 class PutMessageResponseOk(BaseMessage):
+    name = "PutMessageResponseOk"
+
     def __init__(self,
                  src: str,
                  dst: str,
@@ -100,6 +110,8 @@ class PutMessageResponseOk(BaseMessage):
 
 
 class MessageFail(BaseMessage):
+    name = "MessageFail"
+
     def __init__(self,
                  src: str,
                  dst: str,
@@ -110,6 +122,8 @@ class MessageFail(BaseMessage):
 
 
 class MessageRedirect(BaseMessage):
+    name = "MessageRedirect"
+
     def __init__(self,
                  src: str,
                  dst: str,
@@ -121,6 +135,8 @@ class MessageRedirect(BaseMessage):
 
 # Raft algorithm request wrappers
 class RequestVote(BaseMessage):
+    name = "RequestVote"
+
     def __init__(self,
                  src: str,
                  dst: str,
@@ -137,6 +153,8 @@ class RequestVote(BaseMessage):
 
 
 class RequestVoteResponse(BaseMessage):
+    name = "RequestVoteResponse"
+
     def __init__(self,
                  src: str,
                  dst: str,
@@ -149,6 +167,8 @@ class RequestVoteResponse(BaseMessage):
 
 
 class AppendEntriesReq(BaseMessage):
+    name = "AppendEntriesReq"
+
     def __init__(self,
                  src: str,
                  dst: str,
@@ -167,8 +187,15 @@ class AppendEntriesReq(BaseMessage):
         self.entries = entries
         self.leader_commit_index = leader_commit_index
 
+    def serialize(self):
+        dict = super().serialize()
+        dict["entries"] = [entry.serialize() for entry in dict["entries"]]
+        return dict
+
 
 class AppendEntriesResponse(BaseMessage):
+    name = "AppendEntriesResponse"
+
     def __init__(self,
                  src: str,
                  dst: str,
@@ -217,6 +244,9 @@ def get_message_from_payload(payload: dict) -> Union[GetMessageRequest, PutMessa
             payload["leader"]
         )
     elif payload.get("type", None) == MessageTypes.APPEND_ENTRIES.value:
+        entries = [deserialize_command(serialized_entry)
+                   for serialized_entry in payload["entries"]]
+
         return AppendEntriesReq(
             payload["src"],
             payload["dst"],
@@ -224,7 +254,7 @@ def get_message_from_payload(payload: dict) -> Union[GetMessageRequest, PutMessa
             payload["leader_id"],
             payload["prev_log_index"],
             payload["prev_log_term_number"],
-            payload["entries"],
+            entries,
             payload["leader_commit_index"],
             payload["leader"],
         )

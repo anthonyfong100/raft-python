@@ -1,0 +1,2 @@
+Append entries failed to append, append entries msg term_number:1msg prev_log_index:0, msg prev_log_term:1                
+current term number: 1 log length 0 prev_log_term_number Non
