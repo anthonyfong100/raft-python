@@ -16,6 +16,7 @@ import atexit
 import getpass
 import argparse
 import functools
+import logging
 
 VERSION = "2"
 
@@ -45,6 +46,30 @@ PERF_TESTS = ("total_msgs", "failures", "duplicates", "median_latency")
 
 TERMINATOR = b'}\n'
 DEVNULL = open(os.devnull, 'w')
+
+logger = logging.getLogger("simulator_logs")
+logger.setLevel(logging.INFO)
+
+# create console handler logging info messages
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+
+# create file handler which logs even debug messages
+file_handler = logging.FileHandler('simulator_logs.log')
+file_handler.setLevel(logging.INFO)
+
+# create formatter and add it to the handlers
+formatter = logging.Formatter(
+    f'%(asctime)s - %(levelname)s - %(message)s', "%Y-%m-%d %H:%M:%S")
+
+file_handler.setFormatter(formatter)
+console_handler.setFormatter(formatter)
+
+# add the handlers to the logger
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
+
+print = logger.info
 
 #######################################################################################################
 # Utilities for coloring the terminal output, since import termcolor and colorama aren't available
@@ -204,8 +229,8 @@ class Config:
         for event in self.events:
             print(f"   Event {event['type']:15} {event['time']}")
 
-        for test, tiers in self.benchmarks:
-            print(f'{test:16} {str(tiers)}')
+        # for test, tiers in self.benchmarks:
+        #     print(f'{test:16} {str(tiers)}')
 
 #######################################################################################################
 
@@ -658,6 +683,7 @@ class Simulation:
             r.remove(rid)
 
     def __partition_easy__(self):
+
         self.__partition__(True)
 
     def __partition_hard__(self):
@@ -952,6 +978,7 @@ def single_test(testfile, silence=False):
     stats = sim.stats
 
     bold("\n# Simulation Finished\n\n## Useful Information and Statistics")
+    sim.conf.dump()
     sim.stats.dump()
 
     bold("\n## Correctness Checks")

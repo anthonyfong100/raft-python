@@ -45,6 +45,7 @@ ut-integration-test:
 	
 clean:
 	rm ./raft_python_debug.log
+	rm ./simulator_logs.log
 
 view-logs:
 	tail -f raft_python_debug.log
