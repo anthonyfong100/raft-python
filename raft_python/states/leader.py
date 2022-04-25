@@ -62,8 +62,7 @@ class Leader(State):
             )
             logger.debug(
                 f"Making AppendEntriesRPC call with {msg.serialize()}")
-
-            self.raft_node.send(msg)
+            self.raft_node.send(msg, "heartbeat" if is_heartbeat else None)
         self._reset_timeout()
 
     def send_heartbeat(self):
@@ -149,9 +148,6 @@ class Leader(State):
                 resp_packet = self.waiting_client_response.get(
                     command.MID, None)
                 if resp_packet is not None:
-                    if type(command) == GetCommand:
-                        # update the value
-                        resp_packet.value = resp_value
                     self.raft_node.send(resp_packet)
                     # set waiting call to be none
                     del (self.waiting_client_response[command.MID])

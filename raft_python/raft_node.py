@@ -38,9 +38,12 @@ class RaftNode:
         logger.info("Replica %s starting up" % self.id)
         self.send(hello_msg)
 
-    def send(self, message: IncomingMessageType):
+    def send(self, message: IncomingMessageType, tag: str = None):
         """Wrapper to call internal socket Manager to send message"""
-        self.stats_recorder.inc_stat(message.name, 1)
+        stat_name = message.name
+        if tag is not None:
+            stat_name = f"{message.name}_{tag}"
+        self.stats_recorder.inc_stat(stat_name, 1)
         self.socket.send(message.serialize())
 
     # State wrapper functions
