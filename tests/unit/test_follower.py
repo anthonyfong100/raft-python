@@ -186,7 +186,7 @@ class TestFollower(unittest.TestCase):
         self.assertFalse(
             self.follower_state._is_valid_append_entries_req(invalid_incoming_vote_req))
 
-    def test_is_valid_append_entries_req_success(self):
+    def test_on_internal_recv_append_entries(self):
         """
         Check if is valid append entries
         1. length of log in recv > prev log index
