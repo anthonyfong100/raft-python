@@ -26,7 +26,13 @@ class Leader(State):
                                            Union[Messages.PutMessageResponseOk, Messages.GetMessageResponseOk]] = {}
         self.send_heartbeat()
 
-    # TODO: Modfiy this to call in a loop
+    def _reset_timeout(self):
+        """ 
+        Resets the last heartbeat, randomize the number election timer and generate the next execution time for voting
+        """
+        self.last_hearbeat = time.time()
+        self.execution_time = self.last_hearbeat + HEARTBEAT_INTERNVAL
+
     def send_append_entries(self, is_heartbeat=False):
         for peer in self.cluster_nodes:
             # dont send to yourself
@@ -39,9 +45,9 @@ class Leader(State):
             if is_heartbeat:
                 entries = []
             elif prev_log_index == -1:
-                entries = self.log
+                entries = self.log.copy()
             else:
-                entries = self.log[prev_log_index:]
+                entries = self.log[prev_log_index + 1:].copy()
 
             msg: Messages.AppendEntriesReq = Messages.AppendEntriesReq(
                 src=self.raft_node.id,
@@ -58,19 +64,14 @@ class Leader(State):
                 f"Making AppendEntriesRPC call with {msg.serialize()}")
 
             self.raft_node.send(msg)
+        self._reset_timeout()
 
     def send_heartbeat(self):
         self.send_append_entries(is_heartbeat=True)
-        self.last_hearbeat = time.time()
-        self.execution_time = self.last_hearbeat + HEARTBEAT_INTERNVAL
 
     # TODO: Remove sending heartbeats
     def destroy(self):
         return
-
-    def _register_loop_send_heartbeat(self):
-        """Regularly send out heartbeat messages"""
-        pass
 
     # TODO: Do this the right way by waiting for quorum
     def on_client_put(self, msg: Messages.PutMessageRequest):
@@ -145,6 +146,8 @@ class Leader(State):
             index = statistics.median_low(self.match_index.values())
 
             for ix_commit in range(self.commit_index + 1, index + 1):
+                logger.debug(
+                    f"commiting {ix_commit} self.log:{self.log} self.match index:{self.match_index}")
                 command: ALL_COMMANDS = self.log[ix_commit]
                 resp_value = self.raft_node.execute(command)
                 self.commit_index = index
