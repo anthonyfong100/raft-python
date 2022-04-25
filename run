@@ -735,8 +735,8 @@ class Simulation:
                 msg = sock.read(1500).decode('utf-8')
                 if len(msg) > 0:
                     for line in msg.strip().split("\n"):
-                        print("[%02.4f  Replica %s]: %s" %
-                              (time.time() - start, r.rid, line))
+                        print("[%02.4f  Replica %s Partition %s]: %s " %
+                              (time.time() - start, r.rid, self.partition, line))
                 else:
                     print("Replica %s crashed; closing sockets" % r.rid)
                     r.fds = []
