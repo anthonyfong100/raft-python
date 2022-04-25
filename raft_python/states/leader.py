@@ -160,6 +160,8 @@ class Leader(State):
                     # set waiting call to be none
                     del (self.waiting_client_response[command.MID])
 
+            self.commit_index = index  # update the commit index
+
         else:
             # decremeent the next index for that receiver
             self.match_index[msg.src] = max(0, self.match_index[msg.src] - 1)

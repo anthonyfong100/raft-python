@@ -126,8 +126,8 @@ class TestLeader(unittest.TestCase):
         ]
         self.raft_node_mock.execute.assert_has_calls(
             execute_commands_mock)
-
-        self.leader_state.commit_index = 3
+        self.assertEqual(self.leader_state.commit_index, 2,
+                         "Commit index should be set to 2")
 
     def test_on_internal_recv_append_entries_response_failure(self):
         """ Send append entries to node 3 receive failure"""
