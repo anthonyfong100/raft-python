@@ -9,26 +9,26 @@ class TestKVCache(unittest.TestCase):
 
     def test_execute_set(self):
         command: SetCommand = SetCommand(
-            0, {"key": "name", "value": "anthony"})
+            0, {"key": "name", "value": "anthony"}, MID="MID")
         self.kv_cache.execute(command)
         self.assertEqual(
             self.kv_cache.cache["name"], "anthony", "Cache should set name to be anthony")
 
         command: SetCommand = SetCommand(
-            0, {"key": "name", "value": "alfred"})
+            0, {"key": "name", "value": "alfred"}, MID="MID")
         self.kv_cache.execute(command)
         self.assertEqual(
             self.kv_cache.cache["name"], "alfred", "Cache should reset name to be alfred")
 
     def test_execute_get(self):
         command: SetCommand = SetCommand(
-            0, {"key": "name", "value": "anthony"})
+            0, {"key": "name", "value": "anthony"}, MID="MID")
         self.kv_cache.execute(command)
         self.assertEqual(
             self.kv_cache.cache["name"], "anthony", "Cache should set name to be anthony")
 
         command: SetCommand = GetCommand(
-            0, {"key": "name"})
+            0, {"key": "name"}, MID="MID")
         resp = self.kv_cache.execute(command)
         self.assertEqual(
             resp, "anthony", "Cache should return anthony")

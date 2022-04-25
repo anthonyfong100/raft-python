@@ -105,18 +105,19 @@ class Follower(State):
             self._reset_timeout()
         if is_success:
             # remove log terms from index onwards
-            self.log = self.log[:msg.prev_log_index]
+            self.log = self.log[:msg.prev_log_index + 1].copy()
             self.leader_id = msg.leader_id
             logger.info(f"leader is now set to {msg.leader_id}")
             for entry in msg.entries:
                 self.log.append(entry)
-
             # TODO add in commiting of messages
         else:
             prev_log_term_number = self.log[msg.prev_log_index].term_number if len(
                 self.log) > msg.prev_log_index else None
-            logger.warning(f"Append entries failed to append, append entries msg:{msg},\
-                current term: {self.term_number} log length {len(self.log)} prev_log_term_number {prev_log_term_number} ")
+            logger.warning(f"Append entries failed to append, append entries msg term_number:{msg.term_number} "
+                           f"msg prev_log_index:{msg.prev_log_index}, msg prev_log_term:{msg.prev_log_term_number} \n"
+                           f"current term number: {self.term_number} log length: {len(self.log)} "
+                           f"prev_log_term_number: {prev_log_term_number}")
 
         resp: Messages.AppendEntriesResponse = Messages.AppendEntriesResponse(
             src=self.raft_node.id,

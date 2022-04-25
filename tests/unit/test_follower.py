@@ -80,7 +80,7 @@ class TestFollower(unittest.TestCase):
             incoming_vote_req), "Should not accept vote since term number is smaller")
 
     def test_should_accept_vote_fail_smaller_last_log_term_number(self):
-        self.follower_state.log.append(SetCommand(1000, {}))
+        self.follower_state.log.append(SetCommand(1000, {}, MID="MID"))
         self.follower_state.term_number = 1000
         incoming_vote_req: Messages.RequestVote = Messages.RequestVote(
             "voter_src",
@@ -94,8 +94,8 @@ class TestFollower(unittest.TestCase):
             incoming_vote_req), "Should not accept vote since message last log term number 999 < 1000")
 
     def test_should_accept_vote_fail_same_last_log_term_number_shorter_len(self):
-        self.follower_state.log.append(SetCommand(1000, {}))
-        self.follower_state.log.append(SetCommand(1000, {}))
+        self.follower_state.log.append(SetCommand(1000, {}, MID="MID"))
+        self.follower_state.log.append(SetCommand(1000, {}, MID="MID"))
         self.follower_state.term_number = 1000
         incoming_vote_req: Messages.RequestVote = Messages.RequestVote(
             "voter_src",
@@ -171,7 +171,7 @@ class TestFollower(unittest.TestCase):
         1. length of log in recv > prev log index
         2. log entry term number at prev log index is the same is valid
         """
-        self.follower_state.log.append(SetCommand(4, {}))
+        self.follower_state.log.append(SetCommand(4, {}, MID="MID"))
         invalid_incoming_vote_req: Messages.AppendEntriesReq = Messages.AppendEntriesReq(
             src="voter_src",
             dst=self.raft_node_mock.id,
@@ -192,7 +192,7 @@ class TestFollower(unittest.TestCase):
         1. length of log in recv > prev log index
         2. log entry term number at prev log index is the same is valid
         """
-        self.follower_state.log.append(SetCommand(3, {}))
+        self.follower_state.log.append(SetCommand(3, {}, MID="MID"))
         valid_incoming_vote_req: Messages.AppendEntriesReq = Messages.AppendEntriesReq(
             src="voter_src",
             dst=self.raft_node_mock.id,
@@ -200,8 +200,8 @@ class TestFollower(unittest.TestCase):
             leader_id="leader_id",
             prev_log_index=0,
             prev_log_term_number=3,
-            entries=[SetCommand(3, {}), SetCommand(
-                4, {"key", "a", "value", "b"})],
+            entries=[SetCommand(
+                4, {"key", "a", "value", "b"}, MID="MID")],
             leader_commit_index=3,
             leader="leader"
         )
@@ -209,8 +209,8 @@ class TestFollower(unittest.TestCase):
             self.follower_state._is_valid_append_entries_req(valid_incoming_vote_req))
         self.follower_state.receive_internal_message(
             valid_incoming_vote_req)
-        self.assertEqual(self.follower_state.log, [SetCommand(3, {}), SetCommand(
-            4, {"key", "a", "value", "b"})])
+        self.assertEqual(self.follower_state.log, [SetCommand(3, {}, MID="MID"), SetCommand(
+            4, {"key", "a", "value", "b"}, MID="MID")])
 
         append_entry_resp: Messages.AppendEntriesResponse = Messages.AppendEntriesResponse(
             src=self.follower_state.raft_node.id,

@@ -8,10 +8,11 @@ class CommandType(Enum):
 
 
 class BaseCommand:
-    def __init__(self, term_number: int, command_type: CommandType, args: dict):
+    def __init__(self, term_number: int, command_type: CommandType, args: dict, MID: str):
         self.term_number: int = term_number
         self.command_type: CommandType = command_type
         self.args = args
+        self.MID: str = MID
 
     def serialize(self) -> dict:
         serialized_dict: dict = vars(self).copy()
@@ -27,27 +28,27 @@ class BaseCommand:
 
 
 class SetCommand(BaseCommand):
-    def __init__(self, term_number: int, args: dict):
-        super().__init__(term_number, CommandType.SET, args)
+    def __init__(self, term_number: int, args: dict, MID: str):
+        super().__init__(term_number, CommandType.SET, args, MID)
 
     def is_valid(self):
         return "key" in self.args and "value" in self.args
 
     @staticmethod
     def deserialize(serialized_entry: dict):
-        return SetCommand(serialized_entry["term_number"], serialized_entry["args"])
+        return SetCommand(serialized_entry["term_number"], serialized_entry["args"], serialized_entry["MID"])
 
 
 class GetCommand(BaseCommand):
-    def __init__(self, term_number: int, args: dict):
-        super().__init__(term_number, CommandType.GET, args)
+    def __init__(self, term_number: int, args: dict, MID: str):
+        super().__init__(term_number, CommandType.GET, args, MID)
 
     def is_valid(self):
         return "key" in self.args
 
     @staticmethod
     def deserialize(serialized_entry: dict):
-        return GetCommand(serialized_entry["term_number"], serialized_entry["args"])
+        return GetCommand(serialized_entry["term_number"], serialized_entry["args"], serialized_entry["MID"])
 
 
 ALL_COMMANDS = Union[SetCommand, GetCommand]
