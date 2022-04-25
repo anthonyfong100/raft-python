@@ -22,7 +22,7 @@ class Follower(State):
 
     # TODO: Check if the election timer should be always randomized or only once in the beginning
     def _reset_timeout(self):
-        """ 
+        """
         Resets the last heartbeat, randomize the number election timer and generate the next execution time for voting
         """
         self.last_hearbeat = time.time()
@@ -108,10 +108,14 @@ class Follower(State):
             logger.info(f"leader is now set to {msg.leader_id}")
             for entry in msg.entries:
                 self.log.append(entry)
-            # TODO add in commiting of messages
-            for commit_ix in range(self.commit_index + 1, msg.leader_commit_index + 1):
+
+            max_commit_index = min(len(self.log)-1, msg.leader_commit_index)
+            if max_commit_index != msg.leader_commit_index:
+                logger.warning(f"log is behind leader! self.log length:{len(self.log)}"
+                               f" leader.commit_index: {msg.leader_commit_index}")
+            for commit_ix in range(self.commit_index + 1, max_commit_index + 1):
                 self.raft_node.execute(self.log[commit_ix])
-            self.commit_index = msg.leader_commit_index
+            self.commit_index = max_commit_index
         else:
             prev_log_term_number = self.log[msg.prev_log_index].term_number if len(
                 self.log) > msg.prev_log_index else None
