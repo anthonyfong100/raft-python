@@ -141,7 +141,7 @@ class Leader(State):
         """
         if msg.success:
             self.match_index[msg.src] = msg.match_index
-            self.match_index[self.raft_node.id] = len(self.log)
+            self.match_index[self.raft_node.id] = len(self.log) - 1
             index = statistics.median_low(self.match_index.values())
 
             for ix_commit in range(self.commit_index + 1, index + 1):
@@ -164,4 +164,4 @@ class Leader(State):
 
         else:
             # decremeent the next index for that receiver
-            self.match_index[msg.src] = max(0, self.match_index[msg.src] - 1)
+            self.match_index[msg.src] = max(-1, self.match_index[msg.src] - 1)

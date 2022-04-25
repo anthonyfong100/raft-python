@@ -49,8 +49,12 @@ class TestLeader(unittest.TestCase):
         )
         self.leader_state.on_client_put(put_message1)
         self.assertEqual(len(self.leader_state.log), 1)
-        self.assertEqual(self.leader_state.match_index[self.leader_state.raft_node.id], 0,
-                         "Match index for leader should be zero")
+        self.assertDictEqual(self.leader_state.match_index, {
+            "0": -1,
+            self.leader_state.raft_node.id: 0,
+            "2": -1,
+            "3": -1,
+        })
         self.assertIsNotNone(
             self.leader_state.waiting_client_response.get(put_message1.MID, None), "should add to put message dict")
 
@@ -75,8 +79,12 @@ class TestLeader(unittest.TestCase):
         )
         self.leader_state.on_client_get(put_message1)
         self.assertEqual(len(self.leader_state.log), 1)
-        self.assertEqual(self.leader_state.match_index[self.leader_state.raft_node.id], 0,
-                         "Match index for leader should be zero")
+        self.assertDictEqual(self.leader_state.match_index, {
+            "0": -1,
+            self.leader_state.raft_node.id: 0,
+            "2": -1,
+            "3": -1,
+        })
         self.assertIsNotNone(
             self.leader_state.waiting_client_response.get(put_message1.MID, None), "should add to put message dict")
 
