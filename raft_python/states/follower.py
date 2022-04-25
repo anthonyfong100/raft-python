@@ -4,7 +4,6 @@ import random
 import raft_python.messages as Messages
 from raft_python.states.state import State
 from raft_python.configs import MAX_DURATION_NO_HEARTBEAT, LOGGER_NAME
-from raft_python.commands import deserialize_command
 logger = logging.getLogger(LOGGER_NAME)
 
 

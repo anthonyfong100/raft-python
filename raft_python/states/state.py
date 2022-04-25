@@ -2,7 +2,7 @@ from email.message import Message
 import logging
 import raft_python.messages as Messages
 import time
-from abc import ABC, abstractmethod, ABCMeta
+from abc import ABC, abstractmethod
 from typing import Callable, List
 from raft_python.commands import ALL_COMMANDS
 from raft_python.configs import BROADCAST_ALL_ADDR, LOGGER_NAME
