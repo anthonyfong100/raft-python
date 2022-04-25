@@ -39,6 +39,7 @@ class RaftNode:
 
     def send(self, message: IncomingMessageType, tag: str = None):
         """Wrapper to call internal socket Manager to send message"""
+        logger.info(f"sending msg : {message.serialize()}")
         stat_name = message.name
         if tag is not None:
             stat_name = f"{message.name}_{tag}"
@@ -53,6 +54,7 @@ class RaftNode:
         logger.info(
             f"State changed from {self.state.name} to {new_state.name}")
         new_created_state: "ALL_NODE_STATES" = new_state(self.state, self)
+        self.state.destroy()
         self.state = new_created_state
 
     # KV Store execute wrapper
@@ -76,11 +78,12 @@ class RaftNode:
             msg = self.socket.receive()
             req: IncomingMessageType = get_message_from_payload(msg)
             self.state.receive_message(req)
+            logger.info(f"received message :{req.serialize()}")
 
     def run(self, timeout=None):
         # used to simulate in integration tests
         curr_time = time.time()
         while timeout is None or time.time() < curr_time + timeout:
             self._run_single_step(timeout)
-            logger.info(
-                f"stats of messages sent:{self.stats_recorder.get_stats()}")
+            # logger.info(
+            #     f"stats of messages sent:{self.stats_recorder.get_stats()}")
