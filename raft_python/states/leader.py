@@ -86,6 +86,7 @@ class Leader(State):
             MID=msg.MID,
         )
         self.log.append(set_command)
+        self.match_index[self.raft_node.id] = len(self.log) - 1
         put_response_ok: Messages.PutMessageResponseOk = Messages.PutMessageResponseOk(
             self.raft_node.id,
             msg.src,
@@ -111,6 +112,7 @@ class Leader(State):
             MID=msg.MID,
         )
         self.log.append(get_command)
+        self.match_index[self.raft_node.id] = len(self.log) - 1
         get_response_ok: Messages.GetMessageResponseOk = Messages.GetMessageResponseOk(
             self.raft_node.id,
             msg.src,
