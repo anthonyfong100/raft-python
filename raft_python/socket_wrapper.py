@@ -17,8 +17,13 @@ class SocketWrapper:
         return _socket
 
     def send(self, message_serialized: dict):
-        self.socket.sendto(json.dumps(message_serialized).encode(
-            'utf-8'), ('localhost', self.port))
+        try:
+            self.socket.sendto(json.dumps(message_serialized).encode(
+                'utf-8'), ('localhost', self.port))
+        except:
+            # logger.critical(
+            #     f"error sending message: {message_serialized['src']} {message_serialized['dst']}")
+            pass
 
     def receive(self, buff_size=BUFFER_SIZE) -> dict:
         data, _ = self.socket.recvfrom(buff_size)
