@@ -1,6 +1,7 @@
 import logging
 from typing import Optional
 from raft_python.commands import ALL_COMMANDS, CommandType
+from raft_python.configs import LOGGER_NAME
 logger = logging.getLogger(LOGGER_NAME)
 
 # TODO: Hide KV Cache behind state machine interface for future extensibility
