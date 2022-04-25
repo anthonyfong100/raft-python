@@ -3,7 +3,8 @@ import logging
 import raft_python.messages as Messages
 import statistics
 from typing import List, Optional, Union
-from raft_python.configs import LOGGER_NAME, HEARTBEAT_INTERNVAL
+from raft_python.configs import BROADCAST_ALL_ADDR, LOGGER_NAME, HEARTBEAT_INTERNVAL
+from raft_python.states.follower import Follower
 from raft_python.states.state import State
 from raft_python.commands import ALL_COMMANDS, SetCommand, GetCommand
 logger = logging.getLogger(LOGGER_NAME)
@@ -20,19 +21,34 @@ class Leader(State):
         self.execution_time = self.last_hearbeat + HEARTBEAT_INTERNVAL
         self.args = None
 
-        self.match_index = {node: -1 for node in self.cluster_nodes}
+        # commit index is garunteed to be in sync so we intialize it from there
+        self.match_index = {
+            node: self.commit_index for node in self.cluster_nodes}
         self.waiting_client_response: dict[int,
-                                           Union[Messages.PutMessageResponseOk, Messages.GetMessageResponseOk]] = {}
+                                           Messages.PutMessageResponseOk] = {}
         self.send_heartbeat()
 
+    def destroy(self):
+        self.leader_id = BROADCAST_ALL_ADDR
+        for node_id, client_req in self.waiting_client_response.items():
+            msg_failed: Messages.MessageFail = Messages.MessageFail(
+                src=self.raft_node.id,
+                dst=client_req.dst,
+                MID=client_req.MID,
+                leader=self.leader_id
+            )
+            logger.warning(f"Sending message failure:{msg_failed.MID}")
+            self.raft_node.send(msg_failed)
+        return
+
     def _reset_timeout(self):
-        """ 
+        """
         Resets the last heartbeat, randomize the number election timer and generate the next execution time for voting
         """
         self.last_hearbeat = time.time()
         self.execution_time = self.last_hearbeat + HEARTBEAT_INTERNVAL
 
-    def send_append_entries(self, is_heartbeat=False):
+    def send_append_entries(self):
         for peer in self.cluster_nodes:
             # dont send to yourself
             if peer == self.raft_node.id:
@@ -41,9 +57,7 @@ class Leader(State):
             prev_log_term: int = self.log[prev_log_index].term_number if len(
                 self.log) > prev_log_index and prev_log_index != -1 else 0
             entries: List[ALL_COMMANDS]
-            if is_heartbeat:
-                entries = []
-            elif prev_log_index == -1:
+            if prev_log_index == -1:
                 entries = self.log.copy()
             else:
                 entries = self.log[prev_log_index + 1:].copy()
@@ -59,21 +73,21 @@ class Leader(State):
                 leader_commit_index=self.commit_index,
                 leader=self.raft_node.id,
             )
-            logger.debug(
-                f"Making AppendEntriesRPC call with {msg.serialize()}")
-            self.raft_node.send(msg, "heartbeat" if is_heartbeat else None)
+            logger.info(
+                f"send append entry src:{msg.src} dst:{msg.dst} term number:{msg.term_number} leader:{msg.leader} "
+                f"prev_log_index:{msg.prev_log_index} prev_log_term_number:{msg.prev_log_term_number}")
+
+            logger.debug("sending message")
+            self.raft_node.send(msg)
         self._reset_timeout()
 
+    # TODO: remove this and use send append entries only
     def send_heartbeat(self):
-        self.send_append_entries(is_heartbeat=True)
-
-    # TODO: Remove sending heartbeats
-    def destroy(self):
-        return
+        self.send_append_entries()
 
     # TODO: Do this the right way by waiting for quorum
     def on_client_put(self, msg: Messages.PutMessageRequest):
-        logger.debug(f"Received put request: {msg.serialize()}")
+        logger.info(f"Received put request: {msg.serialize()}")
 
         # create a new command and put it in
         set_command: SetCommand = SetCommand(
@@ -93,11 +107,11 @@ class Leader(State):
             self.leader_id
         )
         self.waiting_client_response[msg.MID] = put_response_ok
-        self.send_append_entries(is_heartbeat=False)
+        self.send_append_entries()
 
     # TODO: Do this the right way by waiting for quorum
     def on_client_get(self, msg: Messages.GetMessageRequest):
-        logger.debug(f"Received put request: {msg.serialize()}")
+        logger.info(f"Received get request: {msg.serialize()}")
 
         # create a new command and put it in
         get_command: GetCommand = GetCommand(
@@ -124,35 +138,57 @@ class Leader(State):
         pass
 
     def on_internal_recv_append_entries(self, msg: Messages.AppendEntriesReq):
-        logger.critical("Leader should never receive append entries call")
-        pass
+        logger.warning("Leader should never receive append entries call")
+        logger.info(
+            f"receive append entry from :{msg.src} term_number:{msg.term_number} prev_log_index:{msg.prev_log_index}"
+            f"prev log term: {msg.prev_log_term_number}")
+        if msg.term_number > self.term_number:
+            # become a follower
+            self.term_number = msg.term_number
+            self.raft_node.change_state(Follower)
+            self.raft_node.state.receive_internal_message(msg)
 
     def on_internal_recv_append_entries_response(self, msg: Messages.AppendEntriesResponse):
         """
         Upon receiving confirmation from other raft nodes
         """
-        if msg.success:
-            self.match_index[msg.src] = msg.match_index
-            self.match_index[self.raft_node.id] = len(self.log) - 1
-            index = statistics.median_low(self.match_index.values())
+        logger.info(f"recevied msg:{msg.serialize()}")
+        if msg.term_number == self.term_number:
+            if msg.success == True:
+                self.match_index[msg.src] = msg.match_index
+                self.match_index[self.raft_node.id] = len(self.log) - 1
+                index = statistics.median_low(self.match_index.values())
 
-            for ix_commit in range(self.commit_index + 1, index + 1):
-                logger.debug(
-                    f"commiting {ix_commit} self.log:{self.log} self.match index:{self.match_index}")
-                command: ALL_COMMANDS = self.log[ix_commit]
-                resp_value = self.raft_node.execute(command)
-                self.commit_index = index
+                for ix_commit in range(self.commit_index + 1, index + 1):
+                    logger.debug(
+                        f"commiting {ix_commit} self.log:{self.log} self.match index:{self.match_index}")
+                    command: ALL_COMMANDS = self.log[ix_commit]
+                    resp_value = self.raft_node.execute(command)
+                    self.commit_index = index
 
-                # send client response if there is a response expected
-                resp_packet = self.waiting_client_response.get(
-                    command.MID, None)
-                if resp_packet is not None:
-                    self.raft_node.send(resp_packet)
-                    # set waiting call to be none
-                    del (self.waiting_client_response[command.MID])
+                    # send client response if there is a response expected
+                    resp_packet = self.waiting_client_response.get(
+                        command.MID, None)
+                    if resp_packet is not None:
+                        self.raft_node.send(resp_packet)
+                        # set waiting call to be none
+                        del (self.waiting_client_response[command.MID])
 
-            self.commit_index = index  # update the commit index
+                self.commit_index = index  # update the commit index
 
-        else:
-            # decremeent the next index for that receiver
-            self.match_index[msg.src] = max(-1, self.match_index[msg.src] - 1)
+            else:
+                # decremeent the next index for that receiver
+                self.match_index[msg.src] = max(-1,
+                                                self.match_index[msg.src] - 1)
+        elif msg.term_number > self.term_number:
+            self.term_number = msg.term_number
+            self.leader_id = BROADCAST_ALL_ADDR
+            self.raft_node.change_state(Follower)
+        logger.info(
+            f"leader log legnth:{len(self.log)} leader commit index:{self.commit_index}, match index:{self.match_index} ")
+
+
+"""
+A B C 
+D E
+"""
