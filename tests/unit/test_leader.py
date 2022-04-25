@@ -39,10 +39,10 @@ class TestLeader(unittest.TestCase):
 
     def test_on_internal_recv_append_entries_response_success(self):
         """ Send append entries to node 3 receive success"""
-        self.leader_state.log.append(SetCommand(1, {}))
-        self.leader_state.log.append(SetCommand(2, {}))
-        self.leader_state.log.append(SetCommand(3, {}))
-        self.leader_state.log.append(SetCommand(4, {}))
+        self.leader_state.log.append(SetCommand(1, {}, MID="MID"))
+        self.leader_state.log.append(SetCommand(2, {}, MID="MID"))
+        self.leader_state.log.append(SetCommand(3, {}, MID="MID"))
+        self.leader_state.log.append(SetCommand(4, {}, MID="MID"))
         self.leader_state.commit_index = -1
         self.leader_state.match_index = {
             "0": 1,
@@ -66,9 +66,9 @@ class TestLeader(unittest.TestCase):
         self.assertEqual(self.leader_state.match_index["3"], 3)
         # current match index 1 2 3 4 --> should commit to index 2 since index 2 has 3 node acknowledging it
         execute_commands_mock: List[SetCommand] = [
-            call(SetCommand(1, {})),
-            call(SetCommand(2, {})),
-            call(SetCommand(3, {})),
+            call(SetCommand(1, {}, MID="MID")),
+            call(SetCommand(2, {}, MID="MID")),
+            call(SetCommand(3, {}, MID="MID")),
         ]
         self.raft_node_mock.execute.assert_has_calls(
             execute_commands_mock)
@@ -77,10 +77,10 @@ class TestLeader(unittest.TestCase):
 
     def test_on_internal_recv_append_entries_response_failure(self):
         """ Send append entries to node 3 receive failure"""
-        self.leader_state.log.append(SetCommand(1, {}))
-        self.leader_state.log.append(SetCommand(2, {}))
-        self.leader_state.log.append(SetCommand(3, {}))
-        self.leader_state.log.append(SetCommand(4, {}))
+        self.leader_state.log.append(SetCommand(1, {}, MID="MID"))
+        self.leader_state.log.append(SetCommand(2, {}, MID="MID"))
+        self.leader_state.log.append(SetCommand(3, {}, MID="MID"))
+        self.leader_state.log.append(SetCommand(4, {}, MID="MID"))
         self.leader_state.commit_index = -1
         self.leader_state.match_index = {
             "0": 1,
@@ -102,6 +102,13 @@ class TestLeader(unittest.TestCase):
 
         # should decrement match index for node 3
         self.assertEqual(self.leader_state.match_index["3"], 1)
+
+    def test_on_internal_recv_append_entries_response_send_resp(self):
+        self.leader_state.log.append(SetCommand(1, {}, MID="MID"))
+        self.leader_state.log.append(SetCommand(2, {}, MID="MID"))
+        self.leader_state.log.append(SetCommand(3, {}, MID="MID"))
+        self.leader_state.log.append(SetCommand(4, {}, MID="MID"))
+        self.leader_state.commit_index = -1
 
 
 if __name__ == '__main__':

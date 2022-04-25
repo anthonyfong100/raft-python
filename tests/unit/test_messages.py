@@ -106,7 +106,7 @@ class TestMessageTypes(unittest.TestCase):
             leader_id="leader_id",
             prev_log_index=0,
             prev_log_term_number=0,
-            entries=[SetCommand(0, {"key": 1, "value": 2})],
+            entries=[SetCommand(0, {"key": 1, "value": 2}, MID="MID")],
             leader_commit_index=0,
             leader="leader")
         expected_payload: dict = {
@@ -116,7 +116,7 @@ class TestMessageTypes(unittest.TestCase):
             "leader_id": "leader_id",
             "prev_log_index": 0,
             "prev_log_term_number": 0,
-            "entries": [{'term_number': 0, 'command_type': 'set', 'args': {'key': 1, 'value': 2}}],
+            "entries": [{'term_number': 0, 'command_type': 'set', "MID": "MID", 'args': {'key': 1, 'value': 2}}],
             "leader_commit_index": 0,
             "leader": "leader",
             "type": "append_entries",
