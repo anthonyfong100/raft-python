@@ -2,7 +2,6 @@ import logging
 import socket
 import json
 from raft_python.configs import BUFFER_SIZE, LOGGER_NAME
-from raft_python.messages import IncomingMessageType
 
 logger = logging.getLogger(LOGGER_NAME)
 

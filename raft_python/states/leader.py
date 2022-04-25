@@ -21,7 +21,6 @@ class Leader(State):
         self.args = None
 
         self.match_index = {node: -1 for node in self.cluster_nodes}
-        self.commit_index = -1  # store the last index of command executed in log
         self.waiting_client_response: dict[int,
                                            Union[Messages.PutMessageResponseOk, Messages.GetMessageResponseOk]] = {}
         self.send_heartbeat()
