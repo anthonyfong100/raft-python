@@ -4,15 +4,14 @@ import socket
 import time
 import threading
 from raft_python.states import ALL_NODE_STATE
-from typing import Dict, List, Union
+from typing import Dict, List
 from raft_python.configs import BUFFER_SIZE
 from raft_python.raft_node import RaftNode
-from raft_python.states.candidate import Candidate
 from raft_python.states.follower import Follower
 from raft_python.raft_node import RaftNode
 from raft_python.socket_wrapper import SocketWrapper
 from raft_python.kv_cache import KVCache
-from raft_python.states.leader import Leader
+from raft_python.stats_recorder import StatsRecorder
 
 
 def wait_and_run(func, wait_timeout=3, run_timeout=30):
@@ -25,6 +24,7 @@ class Simulator:
         self.node_socket = {}
         self.simulator_socket = {}
         self.kv_cache = {}
+        self.stats_recorder = {}
         self.raft_node_mapping: Dict[str, RaftNode] = {}
         self.node_state_dict = node_state_dict
         self.num_nodes = num_nodes
@@ -48,10 +48,11 @@ class Simulator:
 
         # create kv cache
         self.kv_cache[node_id] = KVCache()
+        self.stats_recorder[node_id] = StatsRecorder()
 
         # create state machine mocks
         raft_node = RaftNode(
-            node_socket, self.kv_cache[node_id], node_id, other_nodes_in_network)
+            node_socket, self.kv_cache[node_id], node_id, other_nodes_in_network, self.stats_recorder[node_id])
         follower_state: ALL_NODE_STATE = state(raft_node=raft_node)
         raft_node.register_state(follower_state)
         self.raft_node_mapping[node_id] = raft_node
