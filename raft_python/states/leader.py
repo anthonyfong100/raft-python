@@ -21,7 +21,9 @@ class Leader(State):
         self.execution_time = self.last_hearbeat + HEARTBEAT_INTERNVAL
         self.args = None
 
-        self.match_index = {node: -1 for node in self.cluster_nodes}
+        # commit index is garunteed to be in sync so we intialize it from there
+        self.match_index = {
+            node: self.commit_index for node in self.cluster_nodes}
         self.waiting_client_response: dict[int,
                                            Messages.PutMessageResponseOk] = {}
         self.send_heartbeat()
@@ -39,7 +41,7 @@ class Leader(State):
         return
 
     def _reset_timeout(self):
-        """ 
+        """
         Resets the last heartbeat, randomize the number election timer and generate the next execution time for voting
         """
         self.last_hearbeat = time.time()
@@ -71,8 +73,8 @@ class Leader(State):
                 leader=self.raft_node.id,
             )
             logger.info(
-                f"sending append entries msg: {msg.serialize()}")
-            # f"prev_log_index:{msg.prev_log_index} prev_log_term_number:{msg.prev_log_term_number}")
+                f"send append entry src:{msg.src} dst:{msg.dst} term number:{msg.term_number} leader:{msg.leader} "
+                f"prev_log_index:{msg.prev_log_index} prev_log_term_number:{msg.prev_log_term_number}")
 
             logger.debug("sending message")
             self.raft_node.send(msg)
