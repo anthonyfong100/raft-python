@@ -97,9 +97,6 @@ class Leader(State):
         self.waiting_client_response[msg.MID] = put_response_ok
         self.send_append_entries(is_heartbeat=False)
 
-        # self.raft_node.execute(set_command)
-        # self.raft_node.send(put_response_ok)
-
     # TODO: Do this the right way by waiting for quorum
     def on_client_get(self, msg: Messages.GetMessageRequest):
         logger.debug(f"Received put request: {msg.serialize()}")
@@ -112,19 +109,15 @@ class Leader(State):
             },
             MID=msg.MID,
         )
-        self.log.append(get_command)
-        self.match_index[self.raft_node.id] = len(self.log) - 1
+        value: Optional[str] = self.raft_node.execute(get_command)
         get_response_ok: Messages.GetMessageResponseOk = Messages.GetMessageResponseOk(
             self.raft_node.id,
             msg.src,
             msg.MID,
-            None,
+            value if value is not None else "",
             self.leader_id
         )
-        self.waiting_client_response[msg.MID] = get_response_ok
-        self.send_append_entries(is_heartbeat=False)
-        # value: Optional[str] = self.raft_node.execute(get_command)
-        # self.raft_node.send(get_response_ok)
+        self.raft_node.send(get_response_ok)
 
     def on_internal_recv_request_vote(self, msg: Messages.RequestVote):
         pass
