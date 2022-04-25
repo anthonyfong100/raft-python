@@ -61,7 +61,6 @@ class State(ABC):
     def receive_internal_message(self, msg: Messages.InternalMessageType) -> None:
         """Receive internal message used for elections / voting and call the right method"""
         from raft_python.states.follower import Follower
-        logger.debug(f'Received {msg.serialize()}')
 
         # TODO: Move this logic of setting term number out to the individual calls
         if self.term_number < msg.term_number:

@@ -70,7 +70,7 @@ class Follower(State):
             self._reset_timeout()
             # https://courses.grainger.illinois.edu/ece428/sp2020//assets/slides/lect17.pdf
             self.term_number = msg.term_number
-            logger.info(
+            logger.debug(
                 f"Voting for {msg.candidate_id}")
 
         vote_response: Messages.RequestVoteResponse = Messages.RequestVoteResponse(
@@ -105,7 +105,7 @@ class Follower(State):
             # remove log terms from index onwards
             self.log = self.log[:msg.prev_log_index + 1].copy()
             self.leader_id = msg.leader_id
-            logger.info(f"leader is now set to {msg.leader_id}")
+            logger.debug(f"leader is now set to {msg.leader_id}")
             for entry in msg.entries:
                 self.log.append(entry)
 
@@ -135,5 +135,5 @@ class Follower(State):
         self.raft_node.send(resp)
 
     def on_internal_recv_append_entries_response(self, msg: Messages.AppendEntriesResponse):
-        logger.critical(
+        logger.warning(
             "Followers and candidates should never receive append entries response")

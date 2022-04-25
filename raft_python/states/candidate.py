@@ -22,7 +22,7 @@ class Candidate(Follower):
         self.args = (Candidate)
 
     def run_elections(self):
-        logger.info("Running for elections")
+        logger.debug("Running for elections")
         self.term_number += 1
         self.voted_for = self.raft_node.id
         last_log_index: int = len(self.log)
@@ -40,7 +40,7 @@ class Candidate(Follower):
 
     def on_internal_recv_request_vote_response(self, msg: Messages.RequestVoteResponse):
         self.vote_count += msg.vote_granted
-        logger.info(
+        logger.debug(
             f"Received vote result of {msg.serialize()} new_vote_count:{self.vote_count}"
         )
         if self.vote_count > len(self.cluster_nodes) / 2:

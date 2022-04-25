@@ -57,8 +57,6 @@ class Leader(State):
                 leader_commit_index=self.commit_index,
                 leader=self.raft_node.id,
             )
-            logger.debug(
-                f"Making AppendEntriesRPC call with {msg.serialize()}")
             self.raft_node.send(msg)
         self._reset_timeout()
 
@@ -69,7 +67,7 @@ class Leader(State):
     # TODO: Remove sending heartbeats
     def destroy(self):
         for node_id, client_req in self.waiting_client_response.items():
-            logger.critical(
+            logger.warning(
                 f"node id:{node_id} has unanswered response: {client_req.serialize()}")
         return
 
@@ -99,7 +97,7 @@ class Leader(State):
 
     # TODO: Do this the right way by waiting for quorum
     def on_client_get(self, msg: Messages.GetMessageRequest):
-        logger.debug(f"Received put request: {msg.serialize()}")
+        logger.debug(f"Received get request: {msg.serialize()}")
 
         # create a new command and put it in
         get_command: GetCommand = GetCommand(
@@ -126,7 +124,7 @@ class Leader(State):
         pass
 
     def on_internal_recv_append_entries(self, msg: Messages.AppendEntriesReq):
-        logger.critical("Leader should never receive append entries call")
+        logger.warning("Leader should never receive append entries call")
         pass
 
     def on_internal_recv_append_entries_response(self, msg: Messages.AppendEntriesResponse):
@@ -158,5 +156,5 @@ class Leader(State):
         else:
             # decremeent the next index for that receiver
             self.match_index[msg.src] = max(-1, self.match_index[msg.src] - 1)
-        logger.info(
+        logger.debug(
             f"leader log legnth:{len(self.log)} leader commit index:{self.commit_index}, match index:{self.match_index} ")
