@@ -43,6 +43,13 @@ class State(ABC):
     def destroy(self):
         pass
 
+    def __str__(self) -> str:
+        dict = vars(self).copy()
+        output = ""
+        for key, value in dict.items():
+            output += f"{key}:{value}\n"
+        return output
+
     def _get_method_from_msg(self, msg: Messages.InternalMessageType) -> Callable:
         method_mapping: dict = {
             Messages.GetMessageRequest: self.on_client_get,
@@ -60,19 +67,6 @@ class State(ABC):
 
     def receive_internal_message(self, msg: Messages.InternalMessageType) -> None:
         """Receive internal message used for elections / voting and call the right method"""
-        from raft_python.states.follower import Follower
-
-        # TODO: Move this logic of setting term number out to the individual calls
-        if self.term_number < msg.term_number:
-            # update term number to be the maximum
-            self.term_number = msg.term_number
-
-            if type(self) is not Follower:
-                # set oneself to be follower
-                self.raft_node.change_state(Follower)
-                self.raft_node.state.receive_internal_message(msg)
-                return
-
         call_method: Callable = self._get_method_from_msg(msg)
         if call_method:
             return call_method(msg)

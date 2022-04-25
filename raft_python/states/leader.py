@@ -3,7 +3,8 @@ import logging
 import raft_python.messages as Messages
 import statistics
 from typing import List, Optional, Union
-from raft_python.configs import LOGGER_NAME, HEARTBEAT_INTERNVAL
+from raft_python.configs import BROADCAST_ALL_ADDR, LOGGER_NAME, HEARTBEAT_INTERNVAL
+from raft_python.states.follower import Follower
 from raft_python.states.state import State
 from raft_python.commands import ALL_COMMANDS, SetCommand, GetCommand
 logger = logging.getLogger(LOGGER_NAME)
@@ -22,8 +23,20 @@ class Leader(State):
 
         self.match_index = {node: -1 for node in self.cluster_nodes}
         self.waiting_client_response: dict[int,
-                                           Union[Messages.PutMessageResponseOk, Messages.GetMessageResponseOk]] = {}
+                                           Messages.PutMessageResponseOk] = {}
         self.send_heartbeat()
+
+    def destroy(self):
+        self.leader_id = BROADCAST_ALL_ADDR
+        for node_id, client_req in self.waiting_client_response.items():
+            msg_failed: Messages.MessageFail = Messages.MessageFail(
+                src=self.raft_node.id,
+                dst=client_req.dst,
+                MID=client_req.MID,
+                leader=self.leader_id
+            )
+            self.raft_node.send(msg_failed)
+        return
 
     def _reset_timeout(self):
         """ 
@@ -57,19 +70,17 @@ class Leader(State):
                 leader_commit_index=self.commit_index,
                 leader=self.raft_node.id,
             )
+            logger.info(
+                f"sending append entries msg: {msg.serialize()}")
+            # f"prev_log_index:{msg.prev_log_index} prev_log_term_number:{msg.prev_log_term_number}")
+
+            logger.debug("sending message")
             self.raft_node.send(msg)
         self._reset_timeout()
 
     # TODO: remove this and use send append entries only
     def send_heartbeat(self):
         self.send_append_entries()
-
-    # TODO: Remove sending heartbeats
-    def destroy(self):
-        for node_id, client_req in self.waiting_client_response.items():
-            logger.warning(
-                f"node id:{node_id} has unanswered response: {client_req.serialize()}")
-        return
 
     # TODO: Do this the right way by waiting for quorum
     def on_client_put(self, msg: Messages.PutMessageRequest):
@@ -131,30 +142,42 @@ class Leader(State):
         """
         Upon receiving confirmation from other raft nodes
         """
-        if msg.success:
-            self.match_index[msg.src] = msg.match_index
-            self.match_index[self.raft_node.id] = len(self.log) - 1
-            index = statistics.median_low(self.match_index.values())
+        logger.info(f"recevied msg:{msg.serialize()}")
+        if msg.term_number == self.term_number:
+            if msg.success == True:
+                self.match_index[msg.src] = msg.match_index
+                self.match_index[self.raft_node.id] = len(self.log) - 1
+                index = statistics.median_low(self.match_index.values())
 
-            for ix_commit in range(self.commit_index + 1, index + 1):
-                logger.debug(
-                    f"commiting {ix_commit} self.log:{self.log} self.match index:{self.match_index}")
-                command: ALL_COMMANDS = self.log[ix_commit]
-                resp_value = self.raft_node.execute(command)
-                self.commit_index = index
+                for ix_commit in range(self.commit_index + 1, index + 1):
+                    logger.debug(
+                        f"commiting {ix_commit} self.log:{self.log} self.match index:{self.match_index}")
+                    command: ALL_COMMANDS = self.log[ix_commit]
+                    resp_value = self.raft_node.execute(command)
+                    self.commit_index = index
 
-                # send client response if there is a response expected
-                resp_packet = self.waiting_client_response.get(
-                    command.MID, None)
-                if resp_packet is not None:
-                    self.raft_node.send(resp_packet)
-                    # set waiting call to be none
-                    del (self.waiting_client_response[command.MID])
+                    # send client response if there is a response expected
+                    resp_packet = self.waiting_client_response.get(
+                        command.MID, None)
+                    if resp_packet is not None:
+                        self.raft_node.send(resp_packet)
+                        # set waiting call to be none
+                        del (self.waiting_client_response[command.MID])
 
-            self.commit_index = index  # update the commit index
+                self.commit_index = index  # update the commit index
 
-        else:
-            # decremeent the next index for that receiver
-            self.match_index[msg.src] = max(-1, self.match_index[msg.src] - 1)
+            else:
+                # decremeent the next index for that receiver
+                self.match_index[msg.src] = max(-1,
+                                                self.match_index[msg.src] - 1)
+        elif msg.term_number > self.term_number:
+            self.term_number = msg.term_number
+            self.raft_node.change_state(Follower)
         logger.debug(
             f"leader log legnth:{len(self.log)} leader commit index:{self.commit_index}, match index:{self.match_index} ")
+
+
+"""
+A B C 
+D E
+"""

@@ -52,7 +52,6 @@ class TestCandidate(unittest.TestCase):
             "raft_node1", self.raft_node_mock.id, 9, True, self.candidate_state.leader_id
         )
 
-        print(self.candidate_state.vote_count)
         self.candidate_state.receive_internal_message(incoming_vote_resp)
         self.assertEqual(self.candidate_state.vote_count, 1)
         self.raft_node_mock.change_state.assert_not_called()
@@ -68,7 +67,7 @@ class TestCandidate(unittest.TestCase):
         """
         self.candidate_state.term_number = 8
         incoming_vote_resp: Messages.RequestVoteResponse = Messages.RequestVoteResponse(
-            "raft_node1", self.raft_node_mock.id, 9, True, self.candidate_state.leader_id
+            "raft_node1", self.raft_node_mock.id, 9, False, self.candidate_state.leader_id
         )
 
         self.candidate_state.receive_internal_message(incoming_vote_resp)

@@ -51,11 +51,12 @@ class RaftNode:
         self.state = state
 
     def change_state(self, new_state: "ALL_NODE_STATES"):
-        logger.debug(
+        logger.info(
             f"State changed from {self.state.name} to {new_state.name}")
         new_created_state: "ALL_NODE_STATES" = new_state(self.state, self)
         self.state.destroy()
         self.state = new_created_state
+        return new_created_state
 
     # KV Store execute wrapper
     def execute(self, command: ALL_COMMANDS):
@@ -87,3 +88,5 @@ class RaftNode:
             self._run_single_step(timeout)
             logger.debug(
                 f"stats of messages sent:{self.stats_recorder.get_stats()}")
+            logger.info(
+                f"self state : {type(self.state)} term_number:{self.state.term_number} log length:{len(self.state.log)}")

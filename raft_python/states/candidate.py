@@ -22,7 +22,8 @@ class Candidate(Follower):
         self.args = (Candidate)
 
     def run_elections(self):
-        logger.debug("Running for elections")
+        self.leader_id = BROADCAST_ALL_ADDR
+        logger.info(f"Running for elections term_number{self.term_number}")
         self.term_number += 1
         self.voted_for = self.raft_node.id
         last_log_index: int = len(self.log)
@@ -37,15 +38,24 @@ class Candidate(Follower):
                 last_log_term_number,
                 BROADCAST_ALL_ADDR)  # TODO: Check if should broadcast leader as unknown
             self.raft_node.send(request_vote)
+        self._reset_timeout()
 
     def on_internal_recv_request_vote_response(self, msg: Messages.RequestVoteResponse):
-        self.vote_count += msg.vote_granted
-        logger.debug(
-            f"Received vote result of {msg.serialize()} new_vote_count:{self.vote_count}"
-        )
-        if self.vote_count > len(self.cluster_nodes) / 2:
-            self.raft_node.change_state(Leader)
+        if msg.vote_granted:
+            self.vote_count += msg.vote_granted
+            logger.info(
+                f"Received vote result of {msg.serialize()} new_vote_count:{self.vote_count}"
+            )
+            if self.vote_count > len(self.cluster_nodes) / 2:
+                self.raft_node.change_state(Leader)
+        elif msg.term_number > self.term_number:
+            # change back to follower
+            self.term_number = msg.term_number
+            self.raft_node.change_state(Follower)
 
     def on_internal_recv_append_entries(self, msg: Messages.AppendEntriesReq):
+        logger.info(
+            f"receive append entry from :{msg.src} term_number:{msg.term_number} prev_log_index:{msg.prev_log_index}"
+            f"prev log term: {msg.prev_log_term_number}")
         self.raft_node.change_state(Follower)
         self.raft_node.state.on_internal_recv_append_entries(msg)

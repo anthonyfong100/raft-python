@@ -58,13 +58,26 @@ class TestFollower(unittest.TestCase):
         incoming_vote_req: Messages.RequestVote = Messages.RequestVote(
             "voter_src",
             self.raft_node_mock.id,
-            1000,
+            0,
             "voter_src",
             10,
             999
         )
         self.assertFalse(self.follower_state._should_accept_vote(
             incoming_vote_req), "Should not accept vote since already voted for a candidate")
+
+    def test_should_accept_vote_success_already_voted_but_higher_term_number(self):
+        self.follower_state.voted_for = "voter_candidate_2"
+        incoming_vote_req: Messages.RequestVote = Messages.RequestVote(
+            "voter_src",
+            self.raft_node_mock.id,
+            10,
+            "voter_src",
+            10,
+            999
+        )
+        self.assertTrue(self.follower_state._should_accept_vote(
+            incoming_vote_req), "Should accept vote since term number is higher")
 
     def test_should_accept_vote_fail_smaller_term_number(self):
         self.follower_state.term_number = 1000
