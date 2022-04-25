@@ -32,7 +32,7 @@ class Leader(State):
         self.last_hearbeat = time.time()
         self.execution_time = self.last_hearbeat + HEARTBEAT_INTERNVAL
 
-    def send_append_entries(self, is_heartbeat=False):
+    def send_append_entries(self):
         for peer in self.cluster_nodes:
             # dont send to yourself
             if peer == self.raft_node.id:
@@ -41,9 +41,7 @@ class Leader(State):
             prev_log_term: int = self.log[prev_log_index].term_number if len(
                 self.log) > prev_log_index and prev_log_index != -1 else 0
             entries: List[ALL_COMMANDS]
-            if is_heartbeat:
-                entries = []
-            elif prev_log_index == -1:
+            if prev_log_index == -1:
                 entries = self.log.copy()
             else:
                 entries = self.log[prev_log_index + 1:].copy()
@@ -61,14 +59,18 @@ class Leader(State):
             )
             logger.debug(
                 f"Making AppendEntriesRPC call with {msg.serialize()}")
-            self.raft_node.send(msg, "heartbeat" if is_heartbeat else None)
+            self.raft_node.send(msg)
         self._reset_timeout()
 
+    # TODO: remove this and use send append entries only
     def send_heartbeat(self):
-        self.send_append_entries(is_heartbeat=True)
+        self.send_append_entries()
 
     # TODO: Remove sending heartbeats
     def destroy(self):
+        for node_id, client_req in self.waiting_client_response.items():
+            logger.critical(
+                f"node id:{node_id} has unanswered response: {client_req.serialize()}")
         return
 
     # TODO: Do this the right way by waiting for quorum
@@ -93,7 +95,7 @@ class Leader(State):
             self.leader_id
         )
         self.waiting_client_response[msg.MID] = put_response_ok
-        self.send_append_entries(is_heartbeat=False)
+        self.send_append_entries()
 
     # TODO: Do this the right way by waiting for quorum
     def on_client_get(self, msg: Messages.GetMessageRequest):
@@ -156,3 +158,5 @@ class Leader(State):
         else:
             # decremeent the next index for that receiver
             self.match_index[msg.src] = max(-1, self.match_index[msg.src] - 1)
+        logger.info(
+            f"leader log legnth:{len(self.log)} leader commit index:{self.commit_index}, match index:{self.match_index} ")

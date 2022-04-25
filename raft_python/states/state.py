@@ -40,6 +40,9 @@ class State(ABC):
         self.execution_time = None
         self.args = None
 
+    def destroy(self):
+        pass
+
     def _get_method_from_msg(self, msg: Messages.InternalMessageType) -> Callable:
         method_mapping: dict = {
             Messages.GetMessageRequest: self.on_client_get,
