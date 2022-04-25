@@ -1,3 +1,4 @@
+from email.message import Message
 import unittest
 import raft_python.messages as Messages
 from typing import List
@@ -103,12 +104,30 @@ class TestLeader(unittest.TestCase):
         # should decrement match index for node 3
         self.assertEqual(self.leader_state.match_index["3"], 1)
 
-    def test_on_internal_recv_append_entries_response_send_resp(self):
-        self.leader_state.log.append(SetCommand(1, {}, MID="MID"))
-        self.leader_state.log.append(SetCommand(2, {}, MID="MID"))
-        self.leader_state.log.append(SetCommand(3, {}, MID="MID"))
-        self.leader_state.log.append(SetCommand(4, {}, MID="MID"))
-        self.leader_state.commit_index = -1
+    def test_on_client_put(self):
+        put_message1: Messages.PutMessageRequest = Messages.PutMessageRequest(
+            src="client",
+            dst=self.leader_state.raft_node.id,
+            MID="MID1",
+            key="key1",
+            value="value1",
+            leader="FFFF"
+        )
+        self.leader_state.on_client_put(put_message1)
+        self.assertEqual(len(self.leader_state.log), 1)
+        self.assertIsNotNone(
+            self.leader_state.waiting_client_response.get(put_message1.MID, None), "should add to put message dict")
+
+        append_entries_reqs: List[Messages.AppendEntriesReq] = [
+            call(Messages.AppendEntriesReq(self.raft_node_mock.id, "0", self.leader_state.term_number,
+                 self.raft_node_mock.id, -1, 0, self.leader_state.log, self.leader_state.commit_index, self.raft_node_mock.id,)),
+            call(Messages.AppendEntriesReq(self.raft_node_mock.id, "2", self.leader_state.term_number,
+                 self.raft_node_mock.id, -1, 0, self.leader_state.log, self.leader_state.commit_index, self.raft_node_mock.id,)),
+            call(Messages.AppendEntriesReq(self.raft_node_mock.id, "3", self.leader_state.term_number,
+                 self.raft_node_mock.id, -1, 0, self.leader_state.log, self.leader_state.commit_index, self.raft_node_mock.id,))
+        ]
+        self.raft_node_mock.send.assert_has_calls(
+            append_entries_reqs, any_order=True)
 
 
 if __name__ == '__main__':

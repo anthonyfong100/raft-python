@@ -2,7 +2,7 @@ import time
 import logging
 import raft_python.messages as Messages
 import statistics
-from typing import List, Optional
+from typing import List, Optional, Union
 from raft_python.configs import LOGGER_NAME, HEARTBEAT_INTERNVAL
 from raft_python.states.state import State
 from raft_python.commands import ALL_COMMANDS, SetCommand, GetCommand
@@ -22,10 +22,12 @@ class Leader(State):
 
         self.match_index = {node: -1 for node in self.cluster_nodes}
         self.commit_index = -1  # store the last index of command executed in log
+        self.waiting_client_response: dict[int,
+                                           Union[Messages.PutMessageResponseOk, Messages.GetMessageResponseOk]] = {}
         self.send_heartbeat()
 
     # TODO: Modfiy this to call in a loop
-    def append_entries(self, is_heartbeat=False):
+    def send_append_entries(self, is_heartbeat=False):
         for peer in self.cluster_nodes:
             # dont send to yourself
             if peer == self.raft_node.id:
@@ -58,7 +60,7 @@ class Leader(State):
             self.raft_node.send(msg)
 
     def send_heartbeat(self):
-        self.append_entries(is_heartbeat=True)
+        self.send_append_entries(is_heartbeat=True)
         self.last_hearbeat = time.time()
         self.execution_time = self.last_hearbeat + HEARTBEAT_INTERNVAL
 
@@ -76,21 +78,25 @@ class Leader(State):
 
         # create a new command and put it in
         set_command: SetCommand = SetCommand(
-            self.term_number, {
+            term_number=self.term_number,
+            args={
                 "key": msg.key,
-                "value": msg.value
-            }
+                "value": msg.value,
+            },
+            MID=msg.MID,
         )
         self.log.append(set_command)
-        self.raft_node.execute(set_command)
-
         put_response_ok: Messages.PutMessageResponseOk = Messages.PutMessageResponseOk(
             self.raft_node.id,
             msg.src,
             msg.MID,
             self.leader_id
         )
-        self.raft_node.send(put_response_ok)
+        self.waiting_client_response[msg.MID] = put_response_ok
+        self.send_append_entries(is_heartbeat=False)
+
+        # self.raft_node.execute(set_command)
+        # self.raft_node.send(put_response_ok)
 
     # TODO: Do this the right way by waiting for quorum
     def on_client_get(self, msg: Messages.GetMessageRequest):
@@ -98,20 +104,24 @@ class Leader(State):
 
         # create a new command and put it in
         get_command: GetCommand = GetCommand(
-            self.term_number, {
+            term_number=self.term_number,
+            args={
                 "key": msg.key,
-            }
+            },
+            MID=msg.MID,
         )
         self.log.append(get_command)
-        value: Optional[str] = self.raft_node.execute(get_command)
         get_response_ok: Messages.GetMessageResponseOk = Messages.GetMessageResponseOk(
             self.raft_node.id,
             msg.src,
             msg.MID,
-            value if value is not None else "",
+            None,
             self.leader_id
         )
-        self.raft_node.send(get_response_ok)
+        self.waiting_client_response[msg.MID] = get_response_ok
+        self.send_append_entries(is_heartbeat=False)
+        # value: Optional[str] = self.raft_node.execute(get_command)
+        # self.raft_node.send(get_response_ok)
 
     def on_internal_recv_request_vote(self, msg: Messages.RequestVote):
         pass
@@ -133,11 +143,19 @@ class Leader(State):
             index = statistics.median_low(self.match_index.values())
 
             for ix_commit in range(self.commit_index + 1, index + 1):
-                self.raft_node.execute(self.log[ix_commit])
+                command: ALL_COMMANDS = self.log[ix_commit]
+                resp_value = self.raft_node.execute(command)
                 self.commit_index = index
 
-            # TODO: send client resposne after successful so they can update their log
-            # self.send_client_append_response()
+                # send client response if there is a response expected
+                resp_packet = self.waiting_client_response.get(
+                    command.MID, None)
+                if resp_packet is not None:
+                    if type(command) == GetCommand:
+                        # update the value
+                        resp_packet.value = resp_value
+                    self.raft_node.send(resp_packet)
+
         else:
             # decremeent the next index for that receiver
             self.match_index[msg.src] = max(0, self.match_index[msg.src] - 1)
