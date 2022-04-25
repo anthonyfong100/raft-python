@@ -57,10 +57,6 @@ class Leader(State):
 
             self.raft_node.send(msg)
 
-        # timeout = randrange(1, 4) * 10 ** (-1 if config.debug else -2)
-        # loop = asyncio.get_event_loop()
-        # self.append_timer = loop.call_later(timeout, self.send_append_entries)
-
     def send_heartbeat(self):
         self.append_entries(is_heartbeat=True)
         self.last_hearbeat = time.time()

@@ -122,7 +122,7 @@ class Follower(State):
             src=self.raft_node.id,
             dst=msg.src,
             term_number=self.term_number,
-            match_index=len(self.log),
+            match_index=len(self.log) - 1,
             success=is_success,
             leader=self.leader_id,
         )

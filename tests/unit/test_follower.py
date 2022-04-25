@@ -207,10 +207,20 @@ class TestFollower(unittest.TestCase):
         )
         self.assertTrue(
             self.follower_state._is_valid_append_entries_req(valid_incoming_vote_req))
-        self.follower_state.on_internal_recv_append_entries(
+        self.follower_state.receive_internal_message(
             valid_incoming_vote_req)
         self.assertEqual(self.follower_state.log, [SetCommand(3, {}), SetCommand(
             4, {"key", "a", "value", "b"})])
+
+        append_entry_resp: Messages.AppendEntriesResponse = Messages.AppendEntriesResponse(
+            src=self.follower_state.raft_node.id,
+            dst="voter_src",
+            term_number=1,
+            match_index=1,
+            success=True,
+            leader="leader_id",
+        )
+        self.raft_node_mock.send.assert_called_once_with(append_entry_resp)
 
 
 if __name__ == '__main__':
