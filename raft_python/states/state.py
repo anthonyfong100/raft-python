@@ -23,6 +23,7 @@ class State(ABC):
             self.leader_id: str = old_state.leader_id
             self.log: List[ALL_COMMANDS] = old_state.log.copy()
             self.cluster_nodes: List[str] = old_state.cluster_nodes
+            self.commit_index = old_state.commit_index
         else:
             self.raft_node: "RaftNode" = raft_node
             self.voted_for = None
@@ -31,6 +32,8 @@ class State(ABC):
             self.log = []
             self.cluster_nodes: List[str] = self.raft_node.others + \
                 [self.raft_node.id]
+            # commit index represents the index of last log entry commited, start with -1
+            self.commit_index = -1
 
         self.last_hearbeat = time.time()
         self.node_raft_command = None

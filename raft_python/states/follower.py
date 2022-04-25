@@ -97,7 +97,6 @@ class Follower(State):
             log_ok = self.log[msg.prev_log_index].term_number == msg.prev_log_term_number
         return term_number_is_valid and log_ok
 
-    # TODO check if need to update term number here
     def on_internal_recv_append_entries(self, msg: Messages.AppendEntriesReq):
         is_success: bool = self._is_valid_append_entries_req(msg)
         if msg.term_number >= self.term_number:
@@ -111,6 +110,9 @@ class Follower(State):
             for entry in msg.entries:
                 self.log.append(entry)
             # TODO add in commiting of messages
+            for commit_ix in range(self.commit_index + 1, msg.leader_commit_index + 1):
+                self.raft_node.execute(self.log[commit_ix])
+            self.commit_index = msg.leader_commit_index
         else:
             prev_log_term_number = self.log[msg.prev_log_index].term_number if len(
                 self.log) > msg.prev_log_index else None

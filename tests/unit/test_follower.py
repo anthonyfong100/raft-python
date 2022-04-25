@@ -202,7 +202,7 @@ class TestFollower(unittest.TestCase):
             prev_log_term_number=3,
             entries=[SetCommand(
                 4, {"key", "a", "value", "b"}, MID="MID")],
-            leader_commit_index=3,
+            leader_commit_index=0,
             leader="leader"
         )
         self.assertTrue(
