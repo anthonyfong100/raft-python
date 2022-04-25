@@ -4,6 +4,7 @@ from raft_python.raft_node import RaftNode
 from raft_python.socket_wrapper import SocketWrapper
 from raft_python.kv_cache import KVCache
 from raft_python.configs import BROADCAST_ALL_ADDR
+from raft_python.stats_recorder import StatsRecorder
 from unittest.mock import Mock
 
 
@@ -11,8 +12,9 @@ class TestRaftNode(unittest.TestCase):
     def setUp(self):
         self.socket_mock = Mock(SocketWrapper)
         self.state_machine_mock = Mock(KVCache)
+        self.stats_recorder = Mock(StatsRecorder)
         self.raft_node = RaftNode(
-            self.socket_mock, self.state_machine_mock, 0, 0)
+            self.socket_mock, self.state_machine_mock, 0, 0, self.stats_recorder)
 
     def test_send_hello(self):
         self.raft_node.send_hello()

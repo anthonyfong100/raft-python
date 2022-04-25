@@ -27,11 +27,11 @@ class TestLeader(unittest.TestCase):
         before_heartbeat_call_count = self.raft_node_mock.send.call_count
         append_entries_reqs: List[Messages.AppendEntriesReq] = [
             call(Messages.AppendEntriesReq(self.raft_node_mock.id, "0", self.leader_state.term_number,
-                 self.raft_node_mock.id, -1, 0, [], self.leader_state.commit_index, self.raft_node_mock.id,)),
+                 self.raft_node_mock.id, -1, 0, [], self.leader_state.commit_index, self.raft_node_mock.id,), "heartbeat"),
             call(Messages.AppendEntriesReq(self.raft_node_mock.id, "2", self.leader_state.term_number,
-                 self.raft_node_mock.id, -1, 0, [], self.leader_state.commit_index, self.raft_node_mock.id,)),
+                 self.raft_node_mock.id, -1, 0, [], self.leader_state.commit_index, self.raft_node_mock.id,), "heartbeat"),
             call(Messages.AppendEntriesReq(self.raft_node_mock.id, "3", self.leader_state.term_number,
-                 self.raft_node_mock.id, -1, 0, [], self.leader_state.commit_index, self.raft_node_mock.id,))
+                 self.raft_node_mock.id, -1, 0, [], self.leader_state.commit_index, self.raft_node_mock.id,), "heartbeat")
         ]
         self.leader_state.send_heartbeat()
         after_heartbeat_call_count = self.raft_node_mock.send.call_count
@@ -65,24 +65,26 @@ class TestLeader(unittest.TestCase):
 
         append_entries_reqs: List[Messages.AppendEntriesReq] = [
             call(Messages.AppendEntriesReq(self.raft_node_mock.id, "0", self.leader_state.term_number,
-                 self.raft_node_mock.id, -1, 0, self.leader_state.log, self.leader_state.commit_index, self.raft_node_mock.id,)),
+                 self.raft_node_mock.id, -1, 0, self.leader_state.log, self.leader_state.commit_index, self.raft_node_mock.id,), None),
             call(Messages.AppendEntriesReq(self.raft_node_mock.id, "2", self.leader_state.term_number,
-                 self.raft_node_mock.id, -1, 0, self.leader_state.log, self.leader_state.commit_index, self.raft_node_mock.id,)),
+                 self.raft_node_mock.id, -1, 0, self.leader_state.log, self.leader_state.commit_index, self.raft_node_mock.id,), None),
             call(Messages.AppendEntriesReq(self.raft_node_mock.id, "3", self.leader_state.term_number,
-                 self.raft_node_mock.id, -1, 0, self.leader_state.log, self.leader_state.commit_index, self.raft_node_mock.id,))
+                 self.raft_node_mock.id, -1, 0, self.leader_state.log, self.leader_state.commit_index, self.raft_node_mock.id,), None)
         ]
         self.raft_node_mock.send.assert_has_calls(
             append_entries_reqs, any_order=True)
 
     def test_on_client_get(self):
-        put_message1: Messages.GetMessageRequest = Messages.GetMessageRequest(
+        put_message1: Messages.PutMessageRequest = Messages.PutMessageRequest(
             src="client",
             dst=self.leader_state.raft_node.id,
             MID="MID1",
             key="key1",
+            value="val1",
             leader="FFFF"
         )
-        self.leader_state.on_client_get(put_message1)
+        self.leader_state.on_client_put(put_message1)
+        # get request does not add to log
         self.assertEqual(len(self.leader_state.log), 1)
         self.assertDictEqual(self.leader_state.match_index, {
             "0": -1,
@@ -95,11 +97,11 @@ class TestLeader(unittest.TestCase):
 
         append_entries_reqs: List[Messages.AppendEntriesReq] = [
             call(Messages.AppendEntriesReq(self.raft_node_mock.id, "0", self.leader_state.term_number,
-                 self.raft_node_mock.id, -1, 0, self.leader_state.log, self.leader_state.commit_index, self.raft_node_mock.id,)),
+                 self.raft_node_mock.id, -1, 0, self.leader_state.log, self.leader_state.commit_index, self.raft_node_mock.id), None),
             call(Messages.AppendEntriesReq(self.raft_node_mock.id, "2", self.leader_state.term_number,
-                 self.raft_node_mock.id, -1, 0, self.leader_state.log, self.leader_state.commit_index, self.raft_node_mock.id,)),
+                 self.raft_node_mock.id, -1, 0, self.leader_state.log, self.leader_state.commit_index, self.raft_node_mock.id,), None),
             call(Messages.AppendEntriesReq(self.raft_node_mock.id, "3", self.leader_state.term_number,
-                 self.raft_node_mock.id, -1, 0, self.leader_state.log, self.leader_state.commit_index, self.raft_node_mock.id,))
+                 self.raft_node_mock.id, -1, 0, self.leader_state.log, self.leader_state.commit_index, self.raft_node_mock.id,), None)
         ]
         self.raft_node_mock.send.assert_has_calls(
             append_entries_reqs, any_order=True)
