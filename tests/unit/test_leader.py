@@ -157,42 +157,44 @@ class TestLeader(unittest.TestCase):
         # should decrement match index for node 3
         self.assertEqual(self.leader_state.match_index["3"], 1)
 
-    # def test_on_internal_recv_append_entries_response_send_reply(self):
-    #     """ Send append entries to node 3 receive success"""
-    #     put_message1: Messages.PutMessageRequest = Messages.PutMessageRequest(
-    #         src="client",
-    #         dst=self.leader_state.raft_node.id,
-    #         MID="MID1",
-    #         key="key1",
-    #         value="value1",
-    #         leader="FFFF"
-    #     )
-    #     self.leader_state.on_client_put(put_message1)
-    #     for other_raft_node_id in ["0", "1", "2"]
-    #     append_entry_resp: Messages.AppendEntriesResponse = Messages.AppendEntriesResponse(
-    #         src="3",
-    #         dst=self.leader_state.raft_node.id,
-    #         term_number=self.leader_state.term_number,
-    #         match_index=0,
-    #         success=True,
-    #         leader=self.leader_state.leader_id,
-    #     )
+    def test_on_internal_recv_append_entries_response_send_reply(self):
+        """ Send append entries to node 3 receive success"""
+        put_message1: Messages.PutMessageRequest = Messages.PutMessageRequest(
+            src="client",
+            dst=self.leader_state.raft_node.id,
+            MID="MID1",
+            key="key1",
+            value="value1",
+            leader="FFFF"
+        )
+        self.leader_state.on_client_put(put_message1)
+        for other_raft_node_id in ["0", "1"]:
+            append_entry_resp: Messages.AppendEntriesResponse = Messages.AppendEntriesResponse(
+                src=other_raft_node_id,
+                dst=self.leader_state.raft_node.id,
+                term_number=self.leader_state.term_number,
+                match_index=0,
+                success=True,
+                leader=self.leader_state.leader_id,
+            )
 
-    #     self.leader_state.on_internal_recv_append_entries_response(
-    #         append_entry_resp)
+            self.leader_state.on_internal_recv_append_entries_response(
+                append_entry_resp)
 
-    #     # should increment match index for node 3
-    #     self.assertEqual(self.leader_state.match_index["3"], 3)
-    #     # current match index 1 2 3 4 --> should commit to index 2 since index 2 has 3 node acknowledging it
-    #     execute_commands_mock: List[SetCommand] = [
-    #         call(SetCommand(1, {}, MID="MID")),
-    #         call(SetCommand(2, {}, MID="MID")),
-    #         call(SetCommand(3, {}, MID="MID")),
-    #     ]
-    #     self.raft_node_mock.execute.assert_has_calls(
-    #         execute_commands_mock)
-
-    #     self.leader_state.commit_index = 3
+        # once receive majority 3 votes --> should commit and send reply
+        self.raft_node_mock.execute.assert_called_once_with(
+            SetCommand(
+                term_number=self.leader_state.term_number,
+                args={"key": put_message1.key, "value": put_message1.value},
+                MID=put_message1.MID))
+        self.raft_node_mock.send.assert_called_with(Messages.PutMessageResponseOk(
+            src=self.leader_state.raft_node.id,
+            dst=put_message1.src,
+            MID=put_message1.MID,
+            leader=self.raft_node_mock.id
+        ))
+        self.assertIsNone(
+            self.leader_state.waiting_client_response.get(put_message1.MID, None))
 
 
 if __name__ == '__main__':

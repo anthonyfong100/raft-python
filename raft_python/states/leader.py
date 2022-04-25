@@ -157,6 +157,8 @@ class Leader(State):
                         # update the value
                         resp_packet.value = resp_value
                     self.raft_node.send(resp_packet)
+                    # set waiting call to be none
+                    del (self.waiting_client_response[command.MID])
 
         else:
             # decremeent the next index for that receiver
