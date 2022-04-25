@@ -1,6 +1,7 @@
 import time
 import logging
 import raft_python.messages as Messages
+import statistics
 from typing import List, Optional
 from raft_python.configs import LOGGER_NAME, HEARTBEAT_INTERNVAL
 from raft_python.states.state import State
@@ -20,7 +21,6 @@ class Leader(State):
         self.args = None
 
         self.match_index = {node: -1 for node in self.cluster_nodes}
-        self.next_index = {node: -1 for node in self.cluster_nodes}
         self.commit_index = -1  # store the last index of command executed in log
         self.send_heartbeat()
 
@@ -30,7 +30,7 @@ class Leader(State):
             # dont send to yourself
             if peer == self.raft_node.id:
                 continue
-            prev_log_index: int = self.next_index[peer]
+            prev_log_index: int = self.match_index[peer]
             prev_log_term: int = self.log[prev_log_index].term_number if len(
                 self.log) > prev_log_index and prev_log_index != -1 else 0
             entries: List[ALL_COMMANDS]
@@ -127,18 +127,17 @@ class Leader(State):
         """
         Upon receiving confirmation from other raft nodes
         """
-        # if msg.success:
-        #     self.match_index[msg.src] = msg.match_index
-        #     self.next_index[msg.src] = msg.match_index + 1
-        #     self.match_index[self.raft_node.id] = len(self.log)
-        #     self.next_index[self.raft_node.id] = len(self.log) + 1
-        #     index = statistics.median_low(self.match_index.values())
+        if msg.success:
+            self.match_index[msg.src] = msg.match_index
+            self.match_index[self.raft_node.id] = len(self.log)
+            index = statistics.median_low(self.match_index.values())
 
-        #     for ix_commit in range(self.commit_index + 1, index + 1):
-        #         self.raft_node.execute(self.log[ix_commit])
+            for ix_commit in range(self.commit_index + 1, index + 1):
+                self.raft_node.execute(self.log[ix_commit])
+                self.commit_index = index
 
-        #     # TODO: send client resposne after successful so they can update their log
-        #     # self.send_client_append_response()
-        # else:
-        #     # decremeent the next index for that receiver
-        #     self.nextIndex[msg.src] = max(0, self.nextIndex[msg.src] - 1)
+            # TODO: send client resposne after successful so they can update their log
+            # self.send_client_append_response()
+        else:
+            # decremeent the next index for that receiver
+            self.match_index[msg.src] = max(0, self.match_index[msg.src] - 1)
