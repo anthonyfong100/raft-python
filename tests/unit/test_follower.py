@@ -193,7 +193,7 @@ class TestFollower(unittest.TestCase):
         2. log entry term number at prev log index is the same is valid
         """
         self.follower_state.log.append(SetCommand(3, {}, MID="MID"))
-        valid_incoming_vote_req: Messages.AppendEntriesReq = Messages.AppendEntriesReq(
+        valid_incoming_append_entry_req: Messages.AppendEntriesReq = Messages.AppendEntriesReq(
             src="voter_src",
             dst=self.raft_node_mock.id,
             term_number=1,
@@ -206,11 +206,14 @@ class TestFollower(unittest.TestCase):
             leader="leader"
         )
         self.assertTrue(
-            self.follower_state._is_valid_append_entries_req(valid_incoming_vote_req))
+            self.follower_state._is_valid_append_entries_req(valid_incoming_append_entry_req))
         self.follower_state.receive_internal_message(
-            valid_incoming_vote_req)
+            valid_incoming_append_entry_req)
         self.assertEqual(self.follower_state.log, [SetCommand(3, {}, MID="MID"), SetCommand(
             4, {"key", "a", "value", "b"}, MID="MID")])
+
+        self.raft_node_mock.execute.assert_called_once_with(
+            SetCommand(3, {}, MID="MID"))
 
         append_entry_resp: Messages.AppendEntriesResponse = Messages.AppendEntriesResponse(
             src=self.follower_state.raft_node.id,
