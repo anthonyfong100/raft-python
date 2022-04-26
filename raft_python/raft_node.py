@@ -1,12 +1,13 @@
 import select
 import time
 import logging
+from copy import deepcopy
 from enum import Enum
 from typing import List
 # from raft_python.states import ALL_NODE_STATES
 from raft_python.socket_wrapper import SocketWrapper
 from raft_python.configs import BROADCAST_ALL_ADDR, LOGGER_NAME
-from raft_python.messages import HelloMessage, get_message_from_payload, IncomingMessageType
+from raft_python.messages import HelloMessage, get_message_from_payload, IncomingMessageType, MessageRedirect, MessageFail
 from raft_python.kv_cache import KVCache
 from raft_python.commands import ALL_COMMANDS
 from raft_python.stats_recorder import StatsRecorder
@@ -29,6 +30,7 @@ class RaftNode:
         self.others: List[str] = others
         self.state = None  # need to register state here
         self.stats_recorder = stats_recorder
+        self.pending_messages: dict = {}
         logger.info("Starting Raft Node")
 
     def send_hello(self):
@@ -56,12 +58,27 @@ class RaftNode:
             f"State changed from {self.state.name} to {new_state.name}")
         new_created_state: "ALL_NODE_STATES" = new_state(self.state, self)
         self.state.destroy()
+        logger.info(f"self pending dict:{self.pending_messages}")
         self.state = new_created_state
         return new_created_state
 
     # KV Store execute wrapper
     def execute(self, command: ALL_COMMANDS):
         return self.executor.execute(command)
+
+    def send_pending_messages_redirect(self):
+        if self.state.leader_id != BROADCAST_ALL_ADDR:
+            for client_req in self.pending_messages.values():
+                msg_redirect: MessageRedirect = MessageRedirect(
+                    src=self.id,
+                    dst=client_req.dst,
+                    MID=client_req.MID,
+                    leader=self.state.leader_id
+                )
+                logger.info(
+                    f"[REDIRECT] Sending message redirect:{msg_redirect.MID}")
+                self.send(msg_redirect)
+            self.pending_messages = {}
 
     def _run_single_step(self, timeout):
         # check if there are any looping messages
@@ -82,6 +99,8 @@ class RaftNode:
             self.state.receive_message(req)
             logger.debug(f"received message :{req.serialize()}")
 
+        self.send_pending_messages_redirect()
+
     def run(self, timeout=None):
         # used to simulate in integration tests
         curr_time = time.time()
@@ -90,4 +109,4 @@ class RaftNode:
             logger.debug(
                 f"stats of messages sent:{self.stats_recorder.get_stats()}")
             logger.info(
-                f"self state : {type(self.state)} term_number:{self.state.term_number} log length:{len(self.state.log)} commit_ix:{self.state.commit_index} self.leader_id {self.state.leader_id}")
+                f"self state : {type(self.state)} term_number:{self.state.term_number} log length:{len(self.state.log)} commit_ix:{self.state.commit_index} self.leader_id {self.state.leader_id} pending_message {self.pending_messages}")
