@@ -2,6 +2,7 @@ import time
 import logging
 import raft_python.messages as Messages
 import statistics
+from copy import deepcopy
 from typing import List, Optional, Union
 from raft_python.configs import BROADCAST_ALL_ADDR, LOGGER_NAME, HEARTBEAT_INTERNVAL
 from raft_python.states.follower import Follower
@@ -30,15 +31,9 @@ class Leader(State):
 
     def destroy(self):
         self.leader_id = BROADCAST_ALL_ADDR
-        for node_id, client_req in self.waiting_client_response.items():
-            msg_failed: Messages.MessageFail = Messages.MessageFail(
-                src=self.raft_node.id,
-                dst=client_req.dst,
-                MID=client_req.MID,
-                leader=self.leader_id
-            )
-            logger.warning(f"Sending message failure:{msg_failed.MID}")
-            self.raft_node.send(msg_failed)
+        for key, val in self.waiting_client_response.items():
+            self.raft_node.pending_messages[key] = deepcopy(val)
+        logger.info(f"leader converting to follower")
         return
 
     def _reset_timeout(self):
